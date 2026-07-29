@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PESV Integral - Sistema de Gestión de Seguridad Vial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { transition: all 0.2s ease; }
+        .sidebar-item { cursor: pointer; padding: 0.75rem 1rem; border-radius: 0.5rem; display: flex; align-items: center; gap: 0.75rem; }
+        .sidebar-item:hover { background: rgba(255,255,255,0.1); }
+        .sidebar-item.active { background: #1e40af; color: white; }
+        .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; }
+        .btn-primary { background: #2563eb; color: white; padding: 0.5rem 1.25rem; border-radius: 0.5rem; font-weight: 600; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary { background: #e2e8f0; color: #475569; padding: 0.5rem 1.25rem; border-radius: 0.5rem; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn-danger { background: #dc2626; color: white; padding: 0.5rem 1.25rem; border-radius: 0.5rem; }
+        .btn-danger:hover { background: #b91c1c; }
+        .input-field { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; outline: none; }
+        .input-field:focus { border-color: #2563eb; ring: 2px solid #2563eb; }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .badge-pendiente { background: #fef3c7; color: #92400e; }
+        .badge-en_proceso { background: #dbeafe; color: #1e40af; }
+        .badge-finalizado { background: #d1fae5; color: #065f46; }
+        .badge-no_aplica { background: #e2e8f0; color: #475569; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .modal-content { background: white; border-radius: 1rem; padding: 2rem; width: 100%; max-width: 32rem; max-height: 90vh; overflow-y: auto; }
+        .progress-bar { height: 0.5rem; border-radius: 9999px; background: #e2e8f0; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 9999px; background: linear-gradient(90deg, #2563eb, #3b82f6); transition: width 0.5s ease; }
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .spinner { border: 3px solid #e2e8f0; border-top: 3px solid #2563eb; border-radius: 50%; width: 2rem; height: 2rem; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans">
+<div id="app" class="min-h-screen flex">
+    <aside id="sidebar" class="no-print w-72 bg-slate-900 text-white flex flex-col shadow-2xl hidden">
+        <div class="p-6 border-b border-slate-700">
+            <h1 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-shield-halved text-blue-400"></i> PESV Integral</h1>
+            <p id="empresa-nombre" class="text-xs text-slate-400 mt-1"></p>
+        </div>
+        <nav class="flex-grow p-4 space-y-1" id="sidebar-nav">
+            <div class="sidebar-item active" onclick="navegar('dashboard')"><i class="fas fa-chart-pie w-5"></i> Dashboard</div>
+            <div class="sidebar-item" onclick="navegar('fases')"><i class="fas fa-layer-group w-5"></i> Fases del PESV</div>
+            <div class="sidebar-item" onclick="navegar('evidencias')"><i class="fas fa-file-circle-check w-5"></i> Evidencias</div>
+            <div class="sidebar-item" onclick="navegar('indicadores')"><i class="fas fa-gauge-high w-5"></i> Indicadores</div>
+            <div class="sidebar-item" onclick="navegar('acciones')"><i class="fas fa-arrows-rotate w-5"></i> Acciones de Mejora</div>
+            <div class="sidebar-item" onclick="navegar('auditorias')"><i class="fas fa-clipboard-check w-5"></i> Auditorías</div>
+            <div class="sidebar-item" onclick="navegar('reportes')"><i class="fas fa-file-pdf w-5"></i> Reportes</div>
+            <div class="sidebar-item" onclick="navegar('usuarios')"><i class="fas fa-users w-5"></i> Usuarios</div>
+            <div class="sidebar-item" onclick="navegar('resoluciones')"><i class="fas fa-gavel w-5"></i> Resolución 40595</div>
+            <div id="sidebar-superadmin" class="sidebar-item hidden" onclick="navegar('superadmin')"><i class="fas fa-crown w-5"></i> Panel Admin</div>
+            <div class="sidebar-item" onclick="navegar('configuracion')"><i class="fas fa-gear w-5"></i> Configuración</div>
+        </nav>
+        <div class="p-4 border-t border-slate-700">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center font-bold" id="avatar-iniciales">A</div>
+                <div class="flex-grow"><p id="usuario-nombre" class="text-sm font-semibold"></p><p id="usuario-rol" class="text-xs text-slate-400"></p></div>
+                <button onclick="cerrarSesion()" class="text-slate-400 hover:text-white" title="Cerrar sesión"><i class="fas fa-right-from-bracket"></i></button>
+            </div>
+        </div>
+    </aside>
+    <main class="flex-grow p-6 lg:p-8 overflow-auto">
+        <div id="loading-screen" class="flex items-center justify-center h-96"><div class="text-center"><div class="spinner mx-auto"></div><p class="mt-4 text-slate-500">Cargando...</p></div></div>
+        <div id="login-screen" class="min-h-screen flex items-center justify-center -m-6 lg:-m-8 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 fade-in">
+                <div class="text-center mb-8"><div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-shield-halved text-white text-2xl"></i></div><h2 class="text-2xl font-bold text-slate-900">PESV Integral</h2><p class="text-slate-500 text-sm mt-1">Sistema de Gestión de Seguridad Vial</p></div>
+                <form id="login-form" class="space-y-4">
+                    <div><label class="block text-sm font-semibold text-slate-700 mb-1">Correo Electrónico</label><input type="email" id="login-email" class="input-field" placeholder="admin@pesv.com" required></div>
+                    <div><label class="block text-sm font-semibold text-slate-700 mb-1">Contraseña</label><input type="password" id="login-password" class="input-field" placeholder="••••••••" required></div>
+                    <div id="login-error" class="text-red-600 text-sm hidden"></div>
+                    <button type="submit" class="btn-primary w-full py-3 text-base"><i class="fas fa-right-to-bracket mr-2"></i> Iniciar Sesión</button>
+                </form>
+                <div class="mt-6 text-center"><button onclick="mostrarRegistro()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold"><i class="fas fa-building mr-1"></i> Registrar nueva empresa</button></div>
+                <div class="mt-4 p-3 bg-slate-50 rounded-lg text-xs text-slate-500"><p class="font-semibold mb-1">Credenciales de demostración:</p><p>Admin: admin@pesv.com / admin123</p><p>Coordinador: coordinador@pesv.com / coord123</p></div>
+            </div>
+        </div>
+        <div id="register-screen" class="min-h-screen flex items-center justify-center -m-6 lg:-m-8 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 hidden">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 fade-in">
+                <div class="text-center mb-8"><div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-building text-white text-2xl"></i></div><h2 class="text-2xl font-bold text-slate-900">Registrar Empresa</h2><p class="text-slate-500 text-sm mt-1">Crea tu cuenta para empezar</p></div>
+                <form id="register-form" class="space-y-4">
+                    <div><label class="block text-sm font-semibold text-slate-700 mb-1">Nombre de la Empresa</label><input type="text" id="reg-empresa" class="input-field" required></div>
+                    <div><label class="block text-sm font-semibold text-slate-700 mb-1">NIT</label><input type="text" id="reg-nit" class="input-field" required></div>
+                    <div><label class="block text-sm font-semibold text-slate-700 mb-1">Nombre Completo</label><input type="text" id="reg-nombre" class="input-field" required></div>
+                    <div><label class="block text-sm font-semibold text-slate-700 mb-1">Correo Electrónico</label><input type="email" id="reg-email" class="input-field" required></div>
+                    <div><label class="block text-sm font-semibold text-slate-700 mb-1">Contraseña</label><input type="password" id="reg-password" class="input-field" minlength="6" required></div>
+                    <div id="register-error" class="text-red-600 text-sm hidden"></div>
+                    <button type="submit" class="btn-primary w-full py-3 text-base bg-green-600 hover:bg-green-700"><i class="fas fa-user-plus mr-2"></i> Crear Cuenta</button>
+                </form>
+                <div class="mt-6 text-center"><button onclick="mostrarLogin()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold"><i class="fas fa-arrow-left mr-1"></i> Volver al inicio de sesión</button></div>
+            </div>
+        </div>
+        <div id="app-content" class="hidden">
+            <div id="view-dashboard" class="view active">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Dashboard</h2><p class="text-slate-500 mt-1">Resumen del avance del PESV</p></div><button onclick="navegar('reportes')" class="btn-primary text-sm"><i class="fas fa-file-pdf mr-2"></i> Ver Reportes</button></div>
+                <div id="dashboard-content" class="space-y-6"><div class="flex items-center justify-center h-32"><div class="spinner"></div></div></div>
+            </div>
+            <div id="view-fases" class="view hidden">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Fases del PESV</h2><p class="text-slate-500 mt-1">Gestión de las 4 fases según Resolución 40595 de 2022</p></div></div>
+                <div id="fases-content" class="space-y-6"><div class="flex items-center justify-center h-32"><div class="spinner"></div></div></div>
+            </div>
+            <div id="view-evidencias" class="view hidden">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Evidencias</h2><p class="text-slate-500 mt-1">Todas las evidencias registradas</p></div></div>
+                <div id="evidencias-content" class="space-y-4"><div class="flex items-center justify-center h-32"><div class="spinner"></div></div></div>
+            </div>
+            <div id="view-indicadores" class="view hidden">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Indicadores de Gestión</h2><p class="text-slate-500 mt-1">Monitoreo de indicadores del PESV</p></div><button onclick="mostrarModalIndicador()" class="btn-primary text-sm"><i class="fas fa-plus mr-2"></i> Nuevo Indicador</button></div>
+                <div id="indicadores-content" class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="flex items-center justify-center h-32 col-span-full"><div class="spinner"></div></div></div>
+            </div>
+            <div id="view-acciones" class="view hidden">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Acciones de Mejora</h2><p class="text-slate-500 mt-1">Plan de acciones correctivas y preventivas</p></div><button onclick="mostrarModalAccion()" class="btn-primary text-sm"><i class="fas fa-plus mr-2"></i> Nueva Acción</button></div>
+                <div id="acciones-content" class="space-y-4"><div class="flex items-center justify-center h-32"><div class="spinner"></div></div></div>
+            </div>
+            <div id="view-auditorias" class="view hidden">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Auditorías</h2><p class="text-slate-500 mt-1">Registro de auditorías internas y externas</p></div><button onclick="mostrarModalAuditoria()" class="btn-primary text-sm"><i class="fas fa-plus mr-2"></i> Nueva Auditoría</button></div>
+                <div id="auditorias-content" class="space-y-4"><div class="flex items-center justify-center h-32"><div class="spinner"></div></div></div>
+            </div>
+            <div id="view-reportes" class="view hidden">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Reportes</h2><p class="text-slate-500 mt-1">Generación de informes del PESV</p></div></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card hover:shadow-lg cursor-pointer" onclick="generarPDF()"><div class="flex items-center gap-4"><div class="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center"><i class="fas fa-file-pdf text-red-600 text-2xl"></i></div><div><h3 class="font-bold text-slate-900">Reporte Completo PESV</h3><p class="text-sm text-slate-500">Genera un PDF con el detalle completo del avance del plan</p></div></div></div>
+                    <div class="card hover:shadow-lg cursor-pointer" onclick="verAvance()"><div class="flex items-center gap-4"><div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center"><i class="fas fa-chart-bar text-blue-600 text-2xl"></i></div><div><h3 class="font-bold text-slate-900">Reporte de Avance</h3><p class="text-sm text-slate-500">Visualiza el avance detallado por fase y paso</p></div></div></div>
+                </div>
+                <div id="reporte-avance" class="mt-6 hidden"></div>
+            </div>
+            <div id="view-usuarios" class="view hidden">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Usuarios</h2><p class="text-slate-500 mt-1">Gestión de usuarios de la empresa</p></div><button onclick="mostrarModalUsuario()" class="btn-primary text-sm"><i class="fas fa-user-plus mr-2"></i> Nuevo Usuario</button></div>
+                <div id="usuarios-content" class="space-y-4"><div class="flex items-center justify-center h-32"><div class="spinner"></div></div></div>
+            </div>
+            <div id="view-resoluciones" class="view hidden">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Resolución 40595 de 2022</h2><p class="text-slate-500 mt-1">Ministerio de Transporte de Colombia - Lineamientos del PESV</p></div></div>
+                <div id="resoluciones-content" class="space-y-6"><div class="flex items-center justify-center h-32"><div class="spinner"></div></div></div>
+            </div>
+            <div id="view-superadmin" class="view hidden">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Panel de Administración</h2><p class="text-slate-500 mt-1">Gestión global de empresas del sistema SAAS</p></div></div>
+                <div id="superadmin-content" class="space-y-6"><div class="flex items-center justify-center h-32"><div class="spinner"></div></div></div>
+            </div>
+            <div id="view-configuracion" class="view hidden">
+                <div class="flex items-center justify-between mb-8"><div><h2 class="text-3xl font-bold text-slate-900">Configuración</h2><p class="text-slate-500 mt-1">Datos de la empresa</p></div></div>
+                <div id="configuracion-content" class="max-w-2xl"><div class="flex items-center justify-center h-32"><div class="spinner"></div></div></div>
+            </div>
+        </div>
+    </main>
+</div>
+<div id="modal-evidencia" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6"><h3 class="text-xl font-bold" id="modal-evidencia-titulo">Gestionar Evidencia</h3><button onclick="cerrarModal('modal-evidencia')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button></div>
+        <form id="form-evidencia" class="space-y-4">
+            <input type="hidden" id="evidencia-paso-id"><input type="hidden" id="evidencia-id">
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Estado</label><select id="evidencia-estado" class="input-field"><option value="pendiente">Pendiente</option><option value="en_proceso">En Proceso</option><option value="finalizado">Finalizado</option><option value="no_aplica">No Aplica</option></select></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Descripción</label><textarea id="evidencia-descripcion" class="input-field" rows="3" placeholder="Describa la evidencia..."></textarea></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Nombre del Archivo</label><input type="text" id="evidencia-archivo" class="input-field" placeholder="Ej: acta_comite.pdf"></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Ruta / Enlace</label><input type="text" id="evidencia-ruta" class="input-field" placeholder="Ej: C:/Documentos/evidencia.pdf"></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Fecha de Ejecución</label><input type="date" id="evidencia-fecha" class="input-field"></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Observaciones</label><textarea id="evidencia-observaciones" class="input-field" rows="2" placeholder="Observaciones adicionales..."></textarea></div>
+            <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="cerrarModal('modal-evidencia')" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Guardar Evidencia</button></div>
+        </form>
+    </div>
+</div>
+<div id="modal-indicador" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6"><h3 class="text-xl font-bold">Nuevo Indicador</h3><button onclick="cerrarModal('modal-indicador')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button></div>
+        <form id="form-indicador" class="space-y-4">
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Nombre del Indicador</label><input type="text" id="ind-nombre" class="input-field" required></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Descripción</label><textarea id="ind-descripcion" class="input-field" rows="2"></textarea></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Fórmula</label><input type="text" id="ind-formula" class="input-field" placeholder="Ej: (N° capacitados / Total conductores) * 100"></div>
+            <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-700 mb-1">Meta</label><input type="number" id="ind-meta" class="input-field" step="0.01"></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">Periodo</label><select id="ind-periodo" class="input-field"><option value="mensual">Mensual</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option></select></div></div>
+            <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="cerrarModal('modal-indicador')" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Crear Indicador</button></div>
+        </form>
+    </div>
+</div>
+<div id="modal-accion" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6"><h3 class="text-xl font-bold">Nueva Acción de Mejora</h3><button onclick="cerrarModal('modal-accion')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button></div>
+        <form id="form-accion" class="space-y-4">
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Origen</label><input type="text" id="acc-origen" class="input-field" placeholder="Ej: Auditoría interna, Revisión dirección"></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Descripción</label><textarea id="acc-descripcion" class="input-field" rows="3" required></textarea></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Responsable</label><input type="text" id="acc-responsable" class="input-field"></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Fecha Compromiso</label><input type="date" id="acc-fecha" class="input-field"></div>
+            <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="cerrarModal('modal-accion')" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Crear Acción</button></div>
+        </form>
+    </div>
+</div>
+<div id="modal-auditoria" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6"><h3 class="text-xl font-bold">Nueva Auditoría</h3><button onclick="cerrarModal('modal-auditoria')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button></div>
+        <form id="form-auditoria" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-700 mb-1">Tipo</label><select id="aud-tipo" class="input-field"><option value="interna">Interna</option><option value="externa">Externa</option></select></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">Fecha</label><input type="date" id="aud-fecha" class="input-field" required></div></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Auditor</label><input type="text" id="aud-auditor" class="input-field"></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Hallazgos</label><textarea id="aud-hallazgos" class="input-field" rows="3"></textarea></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Resultado</label><textarea id="aud-resultado" class="input-field" rows="2"></textarea></div>
+            <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="cerrarModal('modal-auditoria')" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Registrar Auditoría</button></div>
+        </form>
+    </div>
+</div>
+<div id="modal-usuario" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6"><h3 class="text-xl font-bold">Nuevo Usuario</h3><button onclick="cerrarModal('modal-usuario')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button></div>
+        <form id="form-usuario" class="space-y-4">
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Nombre Completo</label><input type="text" id="user-nombre" class="input-field" required></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Correo Electrónico</label><input type="email" id="user-email" class="input-field" required></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Contraseña</label><input type="password" id="user-password" class="input-field" minlength="6" required></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Rol</label><select id="user-rol" class="input-field"><option value="coordinador">Coordinador</option><option value="admin">Administrador</option><option value="consultor">Consultor</option><option value="auditor">Auditor</option></select></div>
+            <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="cerrarModal('modal-usuario')" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Crear Usuario</button></div>
+        </form>
+    </div>
+</div>
+<div id="modal-registro-indicador" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6"><h3 class="text-xl font-bold" id="modal-registro-titulo">Registrar Valor</h3><button onclick="cerrarModal('modal-registro-indicador')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button></div>
+        <form id="form-registro-indicador" class="space-y-4">
+            <input type="hidden" id="reg-indicador-id">
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Valor</label><input type="number" id="reg-valor" class="input-field" step="0.01" required></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Fecha</label><input type="date" id="reg-fecha" class="input-field" required></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Observaciones</label><textarea id="reg-observaciones" class="input-field" rows="2"></textarea></div>
+            <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="cerrarModal('modal-registro-indicador')" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Guardar Registro</button></div>
+        </form>
+    </div>
+</div>
+<script>
+const API = '/api';
+let token = localStorage.getItem('pesv_token');
+let usuarioActual = null;
+function $(id) { return document.getElementById(id); }
+function apiRequest(method, url, data = null) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const config = { method, headers };
+    if (data) config.body = JSON.stringify(data);
+    return fetch(`${API}${url}`, config).then(r => r.json());
+}
+function cerrarModal(id) { $(id).classList.add('hidden'); }
+function badgeEstado(estado) {
+    const map = { 'pendiente': 'badge-pendiente', 'en_proceso': 'badge-en_proceso', 'finalizado': 'badge-finalizado', 'no_aplica': 'badge-no_aplica' };
+    const labels = { 'pendiente': 'Pendiente', 'en_proceso': 'En Proceso', 'finalizado': 'Finalizado', 'no_aplica': 'No Aplica' };
+    return `<span class="badge ${map[estado] || 'badge-pendiente'}">${labels[estado] || estado}</span>`;
+}
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await apiRequest('POST', '/auth/login', { email: $('login-email').value, password: $('login-password').value });
+    if (res.token) { token = res.token; usuarioActual = res.usuario; localStorage.setItem('pesv_token', token); localStorage.setItem('pesv_usuario', JSON.stringify(usuarioActual)); iniciarApp(); }
+    else { const el = $('login-error'); el.textContent = res.error; el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 5000); }
+});
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await apiRequest('POST', '/auth/register', { empresa_nombre: $('reg-empresa').value, nit: $('reg-nit').value, nombre: $('reg-nombre').value, email: $('reg-email').value, password: $('reg-password').value });
+    if (res.mensaje) { alert('Empresa registrada exitosamente. Ahora puede iniciar sesión.'); mostrarLogin(); }
+    else { const el = $('register-error'); el.textContent = res.error; el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 5000); }
+});
+function mostrarRegistro() { $('login-screen').classList.add('hidden'); $('register-screen').classList.remove('hidden'); }
+function mostrarLogin() { $('register-screen').classList.add('hidden'); $('login-screen').classList.remove('hidden'); }
+function cerrarSesion() { token = null; usuarioActual = null; localStorage.removeItem('pesv_token'); localStorage.removeItem('pesv_usuario'); $('sidebar').classList.add('hidden'); $('app-content').classList.add('hidden'); $('login-screen').classList.remove('hidden'); $('login-password').value = ''; }
+function iniciarApp() {
+    $('login-screen').classList.add('hidden'); $('register-screen').classList.add('hidden'); $('loading-screen').classList.add('hidden'); $('sidebar').classList.remove('hidden'); $('app-content').classList.remove('hidden');
+    $('usuario-nombre').textContent = usuarioActual.nombre;
+    $('usuario-rol').textContent = usuarioActual.rol.charAt(0).toUpperCase() + usuarioActual.rol.slice(1);
+    $('empresa-nombre').textContent = usuarioActual.empresa_nombre;
+    $('avatar-iniciales').textContent = usuarioActual.nombre.charAt(0).toUpperCase();
+    if (usuarioActual.rol === 'admin') $('sidebar-superadmin').classList.remove('hidden');
+    navegar('dashboard');
+}
+function navegar(vista) {
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    const view = $(`view-${vista}`);
+    if (view) view.classList.remove('hidden');
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    const items = document.querySelectorAll('.sidebar-item');
+    const idx = ['dashboard','fases','evidencias','indicadores','acciones','auditorias','reportes','usuarios','resoluciones','superadmin','configuracion'].indexOf(vista);
+    if (idx >= 0 && items[idx]) items[idx].classList.add('active');
+    switch(vista) {
+        case 'dashboard': cargarDashboard(); break;
+        case 'fases': cargarFases(); break;
+        case 'evidencias': cargarEvidencias(); break;
+        case 'indicadores': cargarIndicadores(); break;
+        case 'acciones': cargarAcciones(); break;
+        case 'auditorias': cargarAuditorias(); break;
+        case 'usuarios': cargarUsuarios(); break;
+        case 'resoluciones': cargarResoluciones(); break;
+        case 'superadmin': cargarSuperAdmin(); break;
+        case 'configuracion': cargarConfiguracion(); break;
+    }
+}
+async function cargarDashboard() {
+    const c = $('dashboard-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+    const d = await apiRequest('GET', '/dashboard');
+    if (!d.resumen_fases) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
+    let h = `<div class="grid grid-cols-1 md:grid-cols-4 gap-4"><div class="card text-center"><div class="text-3xl font-bold text-blue-600">${d.porcentaje_global || 0}%</div><p class="text-sm text-slate-500 mt-1">Avance Global</p></div><div class="card text-center"><div class="text-3xl font-bold text-green-600">${d.evidencias_por_estado?.finalizado || 0}</div><p class="text-sm text-slate-500 mt-1">Completadas</p></div><div class="card text-center"><div class="text-3xl font-bold text-yellow-600">${d.evidencias_por_estado?.en_proceso || 0}</div><p class="text-sm text-slate-500 mt-1">En Proceso</p></div><div class="card text-center"><div class="text-3xl font-bold text-red-600">${d.acciones_abiertas || 0}</div><p class="text-sm text-slate-500 mt-1">Acciones Abiertas</p></div></div><div class="card"><h3 class="font-bold text-lg mb-4">Avance por Fase</h3><div class="space-y-4">`;
+    for (const f of d.resumen_fases) h += `<div><div class="flex justify-between text-sm mb-1"><span class="font-semibold">${f.nombre}</span><span>${f.completados}/${f.total} (${f.porcentaje}%)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${f.porcentaje}%"></div></div></div>`;
+    h += `</div></div>`;
+    if (d.ultimas_evidencias?.length) { h += `<div class="card"><h3 class="font-bold text-lg mb-4">Últimas Evidencias</h3><div class="space-y-3">`; for (const ev of d.ultimas_evidencias) h += `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><div><p class="font-semibold text-sm">${ev.paso_nombre}</p><p class="text-xs text-slate-500">${ev.usuario_nombre} - ${new Date(ev.updated_at).toLocaleDateString('es-CO')}</p></div>${badgeEstado(ev.estado)}</div>`; h += `</div></div>`; }
+    c.innerHTML = h;
+}
+async function cargarFases() {
+    const c = $('fases-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+    const fases = await apiRequest('GET', '/fases');
+    if (!Array.isArray(fases)) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
+    let h = '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">';
+    for (const fase of fases) {
+        const det = await apiRequest('GET', `/fases/${fase.id}`);
+        const pasos = det.pasos || [];
+        const pct = pasos.length > 0 ? Math.round((pasos.filter(p => p.evidencias_completadas > 0).length / pasos.length) * 100) : 0;
+        h += `<div class="card fade-in"><div class="flex items-center justify-between mb-4"><h3 class="font-bold text-lg">${fase.nombre}</h3><span class="text-sm font-bold text-blue-600">${pct}%</span></div><div class="progress-bar mb-4"><div class="progress-fill" style="width:${pct}%"></div></div><div class="space-y-2">`;
+        for (const paso of pasos) h += `<div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer" onclick="abrirModalEvidencia(${paso.id}, '${paso.nombre}')"><div class="flex items-center gap-3"><span class="text-xs font-bold text-slate-400 w-8">${paso.codigo}</span><div><p class="text-sm font-semibold">${paso.nombre}</p><p class="text-xs text-slate-400">${paso.responsable || 'Sin responsable'}</p></div></div>${badgeEstado(paso.evidencias_completadas > 0 ? 'finalizado' : 'pendiente')}</div>`;
+        h += `</div></div>`;
+    }
+    c.innerHTML = h + '</div>';
+}
+async function cargarEvidencias() {
+    const c = $('evidencias-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+    const evs = await apiRequest('GET', '/evidencias');
+    if (!Array.isArray(evs)) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
+    if (!evs.length) { c.innerHTML = '<div class="card text-center py-12"><i class="fas fa-file-circle-plus text-4xl text-slate-300 mb-4"></i><p class="text-slate-500">No hay evidencias registradas aún</p></div>'; return; }
+    let h = '<div class="card"><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-500 border-b"><th class="pb-3 font-semibold">Paso</th><th class="pb-3 font-semibold">Estado</th><th class="pb-3 font-semibold">Responsable</th><th class="pb-3 font-semibold">Fecha</th><th class="pb-3 font-semibold">Acciones</th></tr></thead><tbody>';
+    for (const ev of evs) h += `<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="py-3"><p class="font-semibold">${ev.paso_nombre || 'N/A'}</p></td><td class="py-3">${badgeEstado(ev.estado)}</td><td class="py-3 text-slate-600">${ev.usuario_nombre}</td><td class="py-3 text-slate-600">${new Date(ev.created_at).toLocaleDateString('es-CO')}</td><td class="py-3"><button onclick="editarEvidencia(${ev.id})" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button><button onclick="eliminarEvidencia(${ev.id})" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button></td></tr>`;
+    c.innerHTML = h + '</tbody></table></div></div>';
+}
+function abrirModalEvidencia(pasoId, pasoNombre) { $('evidencia-paso-id').value = pasoId; $('evidencia-id').value = ''; $('modal-evidencia-titulo').textContent = `Gestionar Evidencia: ${pasoNombre}`; $('evidencia-estado').value = 'pendiente'; $('evidencia-descripcion').value = ''; $('evidencia-archivo').value = ''; $('evidencia-ruta').value = ''; $('evidencia-fecha').value = new Date().toISOString().split('T')[0]; $('evidencia-observaciones').value = ''; $('modal-evidencia').classList.remove('hidden'); }
+async function editarEvidencia(id) { const res = await apiRequest('GET', '/evidencias'); const ev = Array.isArray(res) ? res.find(e => e.id === id) : null; if (!ev) return; $('evidencia-id').value = ev.id; $('evidencia-paso-id').value = ev.paso_id; $('modal-evidencia-titulo').textContent = 'Editar Evidencia'; $('evidencia-estado').value = ev.estado; $('evidencia-descripcion').value = ev.descripcion || ''; $('evidencia-archivo').value = ev.archivo_nombre || ''; $('evidencia-ruta').value = ev.archivo_ruta || ''; $('evidencia-fecha').value = ev.fecha_ejecucion || ''; $('evidencia-observaciones').value = ev.observaciones || ''; $('modal-evidencia').classList.remove('hidden'); }
+async function eliminarEvidencia(id) { if (!confirm('¿Está seguro?')) return; await apiRequest('DELETE', `/evidencias/${id}`); cargarEvidencias(); }
+document.getElementById('form-evidencia').addEventListener('submit', async (e) => { e.preventDefault(); const id = $('evidencia-id').value; const data = { paso_id: parseInt($('evidencia-paso-id').value), estado: $('evidencia-estado').value, descripcion: $('evidencia-descripcion').value, archivo_nombre: $('evidencia-archivo').value, archivo_ruta: $('evidencia-ruta').value, fecha_ejecucion: $('evidencia-fecha').value, observaciones: $('evidencia-observaciones').value }; if (id) await apiRequest('PUT', `/evidencias/${id}`, data); else await apiRequest('POST', '/evidencias', data); cerrarModal('modal-evidencia'); cargarFases(); cargarEvidencias(); });
+async function cargarIndicadores() {
+    const c = $('indicadores-content'); c.innerHTML = '<div class="flex items-center justify-center h-32 col-span-full"><div class="spinner"></div></div>';
+    const inds = await apiRequest('GET', '/indicadores');
+    if (!Array.isArray(inds)) { c.innerHTML = '<p class="text-red-500 col-span-full">Error</p>'; return; }
+    if (!inds.length) { c.innerHTML = '<div class="card text-center py-12 col-span-full"><i class="fas fa-gauge text-4xl text-slate-300 mb-4"></i><p class="text-slate-500">No hay indicadores</p><button onclick="mostrarModalIndicador()" class="btn-primary mt-4 text-sm">Crear Primer Indicador</button></div>'; return; }
+    let h = '';
+    for (const ind of inds) {
+        const regs = await apiRequest('GET', `/indicadores/${ind.id}/registros`);
+        const ult = regs.length > 0 ? regs[0].valor : '—';
+        const cum = ind.meta ? (regs.length > 0 ? Math.round((regs[0].valor / ind.meta) * 100) : 0) : 0;
+        h += `<div class="card fade-in"><div class="flex items-start justify-between mb-3"><div><h4 class="font-bold">${ind.nombre}</h4><p class="text-xs text-slate-500">${ind.descripcion || ''}</p></div><span class="badge bg-blue-100 text-blue-800">${ind.periodo}</span></div><div class="grid grid-cols-3 gap-4 mb-3 text-center"><div><p class="text-2xl font-bold text-blue-600">${ult}</p><p class="text-xs text-slate-500">Último</p></div><div><p class="text-2xl font-bold text-slate-600">${ind.meta || '—'}</p><p class="text-xs text-slate-500">Meta</p></div><div><p class="text-2xl font-bold ${cum >= 100 ? 'text-green-600' : 'text-yellow-600'}">${cum}%</p><p class="text-xs text-slate-500">Cumplimiento</p></div></div><div class="progress-bar mb-3"><div class="progress-fill" style="width:${Math.min(cum, 100)}%"></div></div><div class="flex gap-2"><button onclick="mostrarModalRegistroIndicador(${ind.id}, '${ind.nombre}')" class="btn-primary text-xs py-2"><i class="fas fa-plus mr-1"></i> Registrar</button><button onclick="verHistorialIndicador(${ind.id})" class="btn-secondary text-xs py-2"><i class="fas fa-history mr-1"></i> Historial</button></div><div id="historial-${ind.id}" class="mt-3 hidden"></div></div>`;
+    }
+    c.innerHTML = h;
+}
+function mostrarModalIndicador() { $('modal-indicador').classList.remove('hidden'); }
+document.getElementById('form-indicador').addEventListener('submit', async (e) => { e.preventDefault(); await apiRequest('POST', '/indicadores', { nombre: $('ind-nombre').value, descripcion: $('ind-descripcion').value, formula: $('ind-formula').value, meta: parseFloat($('ind-meta').value) || null, periodo: $('ind-periodo').value }); cerrarModal('modal-indicador'); e.target.reset(); cargarIndicadores(); });
+function mostrarModalRegistroIndicador(id, nombre) { $('reg-indicador-id').value = id; $('modal-registro-titulo').textContent = `Registrar: ${nombre}`; $('reg-fecha').value = new Date().toISOString().split('T')[0]; $('reg-valor').value = ''; $('reg-observaciones').value = ''; $('modal-registro-indicador').classList.remove('hidden'); }
+document.getElementById('form-registro-indicador').addEventListener('submit', async (e) => { e.preventDefault(); const id = $('reg-indicador-id').value; await apiRequest('POST', `/indicadores/${id}/registros`, { valor: parseFloat($('reg-valor').value), fecha: $('reg-fecha').value, observaciones: $('reg-observaciones').value }); cerrarModal('modal-registro-indicador'); cargarIndicadores(); });
+async function verHistorialIndicador(id) { const div = $(`historial-${id}`); if (!div.classList.contains('hidden')) { div.classList.add('hidden'); return; } div.classList.remove('hidden'); div.innerHTML = '<div class="spinner mx-auto"></div>'; const regs = await apiRequest('GET', `/indicadores/${id}/registros`); if (!regs.length) { div.innerHTML = '<p class="text-sm text-slate-500 text-center">Sin registros</p>'; return; } let h = '<div class="space-y-2 mt-2">'; for (const r of regs) h += `<div class="flex justify-between items-center p-2 bg-slate-50 rounded text-sm"><span class="font-semibold">${r.valor}</span><span class="text-slate-500">${new Date(r.fecha).toLocaleDateString('es-CO')}</span><span class="text-xs text-slate-400">${r.observaciones || ''}</span></div>`; div.innerHTML = h + '</div>'; }
+async function cargarAcciones() {
+    const c = $('acciones-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+    const accs = await apiRequest('GET', '/acciones');
+    if (!Array.isArray(accs)) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
+    if (!accs.length) { c.innerHTML = '<div class="card text-center py-12"><i class="fas fa-arrows-rotate text-4xl text-slate-300 mb-4"></i><p class="text-slate-500">No hay acciones</p></div>'; return; }
+    let h = '<div class="space-y-3">';
+    for (const a of accs) { const b = { 'abierta': '<span class="badge bg-red-100 text-red-800">Abierta</span>', 'en_proceso': '<span class="badge bg-yellow-100 text-yellow-800">En Proceso</span>', 'cerrada': '<span class="badge bg-green-100 text-green-800">Cerrada</span>' }[a.estado] || a.estado; h += `<div class="card flex items-start justify-between"><div class="flex-grow"><div class="flex items-center gap-2 mb-1"><h4 class="font-bold">${a.descripcion}</h4>${b}</div><p class="text-sm text-slate-500">Origen: ${a.origen || 'N/E'} | Responsable: ${a.responsable || 'N/A'}</p><p class="text-xs text-slate-400">Compromiso: ${a.fecha_compromiso ? new Date(a.fecha_compromiso).toLocaleDateString('es-CO') : 'Sin fecha'}</p></div><select onchange="cambiarEstadoAccion(${a.id}, this.value)" class="text-sm border rounded p-1 ml-4"><option value="abierta" ${a.estado === 'abierta' ? 'selected' : ''}>Abierta</option><option value="en_proceso" ${a.estado === 'en_proceso' ? 'selected' : ''}>En Proceso</option><option value="cerrada" ${a.estado === 'cerrada' ? 'selected' : ''}>Cerrada</option></select></div>`; }
+    c.innerHTML = h + '</div>';
+}
+async function cambiarEstadoAccion(id, estado) { await apiRequest('PUT', `/acciones/${id}`, { estado }); cargarAcciones(); }
+function mostrarModalAccion() { $('modal-accion').classList.remove('hidden'); }
+document.getElementById('form-accion').addEventListener('submit', async (e) => { e.preventDefault(); await apiRequest('POST', '/acciones', { origen: $('acc-origen').value, descripcion: $('acc-descripcion').value, responsable: $('acc-responsable').value, fecha_compromiso: $('acc-fecha').value }); cerrarModal('modal-accion'); e.target.reset(); cargarAcciones(); });
+async function cargarAuditorias() {
+    const c = $('auditorias-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+    const auds = await apiRequest('GET', '/auditorias');
+    if (!Array.isArray(auds)) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
+    if (!auds.length) { c.innerHTML = '<div class="card text-center py-12"><i class="fas fa-clipboard-check text-4xl text-slate-300 mb-4"></i><p class="text-slate-500">No hay auditorías</p></div>'; return; }
+    let h = '<div class="space-y-3">';
+    for (const a of auds) h += `<div class="card"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="badge ${a.tipo === 'interna' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">${a.tipo === 'interna' ? 'Interna' : 'Externa'}</span><h4 class="font-bold">${new Date(a.fecha).toLocaleDateString('es-CO')}</h4></div><span class="text-sm text-slate-500">Auditor: ${a.auditor || 'N/A'}</span></div>${a.hallazgos ? `<p class="text-sm text-slate-600 mb-1"><strong>Hallazgos:</strong> ${a.hallazgos}</p>` : ''}${a.resultado ? `<p class="text-sm text-slate-600"><strong>Resultado:</strong> ${a.resultado}</p>` : ''}</div>`;
+    c.innerHTML = h + '</div>';
+}
+function mostrarModalAuditoria() { $('modal-auditoria').classList.remove('hidden'); }
+document.getElementById('form-auditoria').addEventListener('submit', async (e) => { e.preventDefault(); await apiRequest('POST', '/auditorias', { tipo: $('aud-tipo').value, fecha: $('aud-fecha').value, auditor: $('aud-auditor').value, hallazgos: $('aud-hallazgos').value, resultado: $('aud-resultado').value }); cerrarModal('modal-auditoria'); e.target.reset(); cargarAuditorias(); });
+async function cargarUsuarios() {
+    const c = $('usuarios-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+    const us = await apiRequest('GET', '/empresas/usuarios');
+    if (!Array.isArray(us)) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
+    let h = '<div class="card"><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-500 border-b"><th class="pb-3 font-semibold">Nombre</th><th class="pb-3 font-semibold">Email</th><th class="pb-3 font-semibold">Rol</th><th class="pb-3 font-semibold">Estado</th></tr></thead><tbody>';
+    for (const u of us) h += `<tr class="border-b border-slate-100"><td class="py-3 font-semibold">${u.nombre}</td><td class="py-3 text-slate-600">${u.email}</td><td class="py-3"><span class="badge bg-slate-100 text-slate-700">${u.rol}</span></td><td class="py-3">${u.activo ? '<span class="text-green-600 font-semibold">Activo</span>' : '<span class="text-red-600 font-semibold">Inactivo</span>'}</td></tr>`;
+    c.innerHTML = h + '</tbody></table></div></div>';
+}
+function mostrarModalUsuario() { $('modal-usuario').classList.remove('hidden'); }
+document.getElementById('form-usuario').addEventListener('submit', async (e) => { e.preventDefault(); const res = await apiRequest('POST', '/empresas/usuarios', { nombre: $('user-nombre').value, email: $('user-email').value, password: $('user-password').value, rol: $('user-rol').value }); if (res.mensaje) { cerrarModal('modal-usuario'); e.target.reset(); cargarUsuarios(); } else alert(res.error || 'Error'); });
+async function cargarConfiguracion() {
+    const c = $('configuracion-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+    const e = await apiRequest('GET', '/empresas/mi-empresa');
+    if (!e) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
+    c.innerHTML = `<div class="card"><h3 class="font-bold text-lg mb-4">Datos de la Empresa</h3><form id="form-config" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-700 mb-1">Nombre</label><input type="text" id="cfg-nombre" class="input-field" value="${e.nombre || ''}"></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">NIT</label><input type="text" id="cfg-nit" class="input-field" value="${e.nit || ''}"></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">Dirección</label><input type="text" id="cfg-direccion" class="input-field" value="${e.direccion || ''}"></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">Teléfono</label><input type="text" id="cfg-telefono" class="input-field" value="${e.telefono || ''}"></div><div class="md:col-span-2"><label class="block text-sm font-semibold text-slate-700 mb-1">Email Contacto</label><input type="email" id="cfg-email" class="input-field" value="${e.email_contacto || ''}"></div></div><div class="flex justify-end"><button type="submit" class="btn-primary">Guardar</button></div></form></div>`;
+    document.getElementById('form-config').addEventListener('submit', async (e) => { e.preventDefault(); const r = await apiRequest('PUT', '/empresas/mi-empresa', { nombre: $('cfg-nombre').value, nit: $('cfg-nit').value, direccion: $('cfg-direccion').value, telefono: $('cfg-telefono').value, email_contacto: $('cfg-email').value }); if (r.mensaje) alert('Datos actualizados'); });
+}
+async function cargarResoluciones() {
+    const c = $('resoluciones-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+    const d = await apiRequest('GET', '/resoluciones/40595');
+    if (!d.titulo) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
+    let h = `<div class="card fade-in"><div class="flex items-center gap-4 mb-6"><div class="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center"><i class="fas fa-gavel text-blue-600 text-3xl"></i></div><div><h3 class="text-2xl font-bold">${d.titulo}</h3><p class="text-slate-500">${d.entidad} - ${d.fecha}</p></div></div><p class="text-slate-700 mb-4">${d.descripcion}</p><div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-lg mb-6"><p class="text-sm font-semibold text-blue-800">Ámbito:</p><p class="text-sm text-blue-700">${d.ambito}</p></div></div><div class="card fade-in"><h3 class="font-bold text-lg mb-4">Objetivos</h3><ul class="space-y-2">`;
+    for (const o of d.objetivos) h += `<li class="flex items-start gap-3"><i class="fas fa-check-circle text-green-500 mt-1"></i><span>${o}</span></li>`;
+    h += `</ul></div><div class="card fade-in"><h3 class="font-bold text-lg mb-4">Estructura del PESV</h3><div class="space-y-4">`;
+    for (const est of d.estructura) h += `<div class="border rounded-lg p-4 hover:bg-slate-50"><div class="flex items-center justify-between mb-2"><h4 class="font-bold text-blue-700">${est.fase}</h4><span class="badge bg-blue-100 text-blue-800">${est.pasos}</span></div><p class="text-sm text-slate-600">${est.descripcion}</p></div>`;
+    h += `</div></div><div class="card fade-in"><h3 class="font-bold text-lg mb-4">Artículos Destacados</h3><ul class="space-y-2">`;
+    for (const art of d.articulos_destacados) h += `<li class="flex items-start gap-3"><i class="fas fa-file-lines text-slate-400 mt-1"></i><span class="text-sm">${art}</span></li>`;
+    h += `</ul><div class="mt-4 pt-4 border-t"><a href="${d.enlace_oficial}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm font-semibold"><i class="fas fa-external-link-alt mr-1"></i> Ministerio de Transporte</a></div></div>`;
+    c.innerHTML = h;
+}
+async function cargarSuperAdmin() {
+    const c = $('superadmin-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+    const stats = await apiRequest('GET', '/superadmin/stats');
+    const empresas = await apiRequest('GET', '/superadmin/empresas');
+    if (!Array.isArray(empresas)) { c.innerHTML = '<p class="text-red-500">Error al cargar</p>'; return; }
+    let h = `<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="card text-center"><div class="text-3xl font-bold text-blue-600">${stats.total_empresas || 0}</div><p class="text-sm text-slate-500">Total Empresas</p></div>
+        <div class="card text-center"><div class="text-3xl font-bold text-green-600">${stats.empresas_activas || 0}</div><p class="text-sm text-slate-500">Activas</p></div>
+        <div class="card text-center"><div class="text-3xl font-bold text-red-600">${stats.empresas_inactivas || 0}</div><p class="text-sm text-slate-500">Inactivas</p></div>
+        <div class="card text-center"><div class="text-3xl font-bold text-purple-600">${stats.total_usuarios || 0}</div><p class="text-sm text-slate-500">Total Usuarios</p></div>
+    </div>`;
+    h += `<div class="card"><h3 class="font-bold text-lg mb-4">Empresas Registradas</h3><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-500 border-b"><th class="pb-3 font-semibold">Empresa</th><th class="pb-3 font-semibold">NIT</th><th class="pb-3 font-semibold">Usuarios</th><th class="pb-3 font-semibold">Evidencias</th><th class="pb-3 font-semibold">Estado</th><th class="pb-3 font-semibold">Acciones</th></tr></thead><tbody>`;
+    for (const emp of empresas) {
+        const pct = emp.total_pasos > 0 ? Math.round((emp.evidencias_completadas / emp.total_pasos) * 100) : 0;
+        h += `<tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="py-3"><p class="font-semibold">${emp.nombre}</p><p class="text-xs text-slate-400">${new Date(emp.created_at).toLocaleDateString('es-CO')}</p></td>
+            <td class="py-3 text-slate-600">${emp.nit}</td>
+            <td class="py-3 text-center">${emp.total_usuarios}</td>
+            <td class="py-3"><div class="flex items-center gap-2"><div class="progress-bar flex-grow"><div class="progress-fill" style="width:${pct}%"></div></div><span class="text-xs font-semibold">${pct}%</span></div></td>
+            <td class="py-3">${emp.activo ? '<span class="badge bg-green-100 text-green-800">Activa</span>' : '<span class="badge bg-red-100 text-red-800">Inactiva</span>'}</td>
+            <td class="py-3"><button onclick="toggleEmpresa(${emp.id}, ${emp.activo})" class="text-sm ${emp.activo ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'} font-semibold">${emp.activo ? 'Desactivar' : 'Activar'}</button></td>
+        </tr>`;
+    }
+    h += `</tbody></table></div></div>`;
+    c.innerHTML = h;
+}
+async function toggleEmpresa(id, activo) {
+    await apiRequest('PUT', `/superadmin/empresas/${id}/estado`, { activo: !activo });
+    cargarSuperAdmin();
+}
+async function generarPDF() {
+    try { const res = await fetch(`${API}/reportes/pdf`, { headers: { 'Authorization': `Bearer ${token}` } }); if (!res.ok) throw new Error('Error'); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `PESV_${usuarioActual.empresa_nombre.replace(/\s+/g, '_')}.pdf`; a.click(); window.URL.revokeObjectURL(url); } catch (err) { alert('Error: ' + err.message); }
+}
+async function verAvance() {
+    const c = $('reporte-avance'); if (!c.classList.contains('hidden')) { c.classList.add('hidden'); return; } c.classList.remove('hidden'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+    const d = await apiRequest('GET', '/reportes/avance');
+    if (!d.detalle_fases) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
+    let h = `<div class="card mt-4"><h3 class="font-bold text-lg mb-4">Reporte de Avance</h3><div class="grid grid-cols-3 gap-4 mb-6 text-center"><div class="p-4 bg-blue-50 rounded-lg"><p class="text-3xl font-bold text-blue-600">${d.total_pasos}</p><p class="text-sm text-slate-600">Total Pasos</p></div><div class="p-4 bg-green-50 rounded-lg"><p class="text-3xl font-bold text-green-600">${d.pasos_con_evidencia}</p><p class="text-sm text-slate-600">Completados</p></div><div class="p-4 bg-purple-50 rounded-lg"><p class="text-3xl font-bold text-purple-600">${d.porcentaje_global}%</p><p class="text-sm text-slate-600">Avance Global</p></div></div><div class="space-y-4">`;
+    for (const f of d.detalle_fases) h += `<div><div class="flex justify-between text-sm mb-1"><span class="font-semibold">${f.nombre}</span><span>${f.pasos_completados}/${f.total_pasos} (${f.porcentaje}%)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${f.porcentaje}%"></div></div></div>`;
+    c.innerHTML = h + '</div></div>';
+}
+(async function init() {
+    if (token) { const res = await apiRequest('GET', '/auth/perfil'); if (res.id) { usuarioActual = res; localStorage.setItem('pesv_usuario', JSON.stringify(usuarioActual)); iniciarApp(); return; } localStorage.removeItem('pesv_token'); localStorage.removeItem('pesv_usuario'); }
+    $('loading-screen').classList.add('hidden'); $('login-screen').classList.remove('hidden');
+})();
+</script>
+</body>
+</html>

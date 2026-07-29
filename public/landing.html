@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PESV Integral - La mejor plataforma SAAS para tu Plan de Seguridad Vial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { scroll-behavior: smooth; margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+        @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 20px rgba(59,130,246,0.3); } 50% { box-shadow: 0 0 50px rgba(59,130,246,0.6); } }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slide-right { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes scale-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes particle { 0% { transform: translateY(0) rotate(0deg); opacity: 0; } 50% { opacity: 0.8; } 100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; } }
+        @keyframes border-glow { 0%,100% { border-color: rgba(59,130,246,0.3); } 50% { border-color: rgba(59,130,246,0.8); } }
+        @keyframes typing { from { width: 0; } to { width: 100%; } }
+        @keyframes blink { 50% { border-color: transparent; } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        .animate-slide-up { animation: slide-up 0.8s ease forwards; }
+        .animate-slide-right { animation: slide-right 0.8s ease forwards; }
+        .animate-scale-in { animation: scale-in 0.6s ease forwards; }
+        .animate-gradient { background-size: 200% 200%; animation: gradient-shift 6s ease infinite; }
+        .typing-text { overflow: hidden; white-space: nowrap; border-right: 3px solid #3b82f6; animation: typing 3s steps(40) 1s forwards, blink 0.75s step-end infinite; width: 0; display: inline-block; }
+        .delay-1 { animation-delay: 0.1s; } .delay-2 { animation-delay: 0.2s; } .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; } .delay-5 { animation-delay: 0.5s; } .delay-6 { animation-delay: 0.6s; }
+        .opacity-0 { opacity: 0; }
+
+        .hero-gradient { background: linear-gradient(135deg, #0a0f1e 0%, #0f172a 30%, #1e3a5f 60%, #0f172a 100%); background-size: 400% 400%; animation: gradient-shift 10s ease infinite; }
+        .card-gradient { background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95)); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .text-gradient-blue { background: linear-gradient(135deg, #60a5fa, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .btn-gradient { background: linear-gradient(135deg, #3b82f6, #8b5cf6); transition: all 0.3s; }
+        .btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(59,130,246,0.4); }
+        .btn-gradient-2 { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+        .btn-gradient-2:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(245,158,11,0.4); }
+
+        .particle { position: absolute; width: 4px; height: 4px; background: rgba(59,130,246,0.4); border-radius: 50%; animation: particle 5s linear infinite; }
+        .particle:nth-child(1) { left: 5%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 15%; animation-delay: 1s; width: 6px; height: 6px; background: rgba(139,92,246,0.4); }
+        .particle:nth-child(3) { left: 25%; animation-delay: 2s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 0.5s; width: 5px; height: 5px; background: rgba(244,114,182,0.4); }
+        .particle:nth-child(5) { left: 55%; animation-delay: 1.5s; }
+        .particle:nth-child(6) { left: 70%; animation-delay: 3s; width: 7px; height: 7px; background: rgba(59,130,246,0.3); }
+        .particle:nth-child(7) { left: 82%; animation-delay: 2.5s; }
+        .particle:nth-child(8) { left: 92%; animation-delay: 0.8s; width: 5px; height: 5px; background: rgba(139,92,246,0.3); }
+
+        .plan-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; }
+        .plan-card::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%); opacity: 0; transition: opacity 0.4s; }
+        .plan-card:hover::before { opacity: 1; }
+        .plan-card:hover { transform: translateY(-10px); }
+        .plan-card.popular { border: 2px solid #3b82f6; transform: scale(1.05); }
+        .plan-card.popular:hover { transform: scale(1.05) translateY(-10px); }
+        .plan-card .popular-badge { position: absolute; top: -12px; right: 20px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 4px 20px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 20px rgba(59,130,246,0.4); }
+
+        .feature-card { transition: all 0.3s; position: relative; overflow: hidden; }
+        .feature-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transform: scaleX(0); transition: transform 0.3s; }
+        .feature-card:hover::after { transform: scaleX(1); }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+
+        .stat-item { position: relative; }
+        .stat-item::after { content: ''; position: absolute; right: 0; top: 10%; height: 80%; width: 1px; background: rgba(255,255,255,0.08); }
+        .stat-item:last-child::after { display: none; }
+
+        .testimonial-card { background: rgba(255,255,255,0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.06); transition: all 0.3s; }
+        .testimonial-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(59,130,246,0.2); transform: translateY(-5px); }
+
+        .nav-blur { backdrop-filter: blur(20px); background: rgba(10,15,30,0.9); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0f1e; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 4px; }
+
+        .glow-blue { box-shadow: 0 0 40px rgba(59,130,246,0.15); }
+        .section-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(59,130,246,0.2), rgba(139,92,246,0.2), transparent); }
+        
+        .hero-title { font-size: clamp(2.5rem, 6vw, 4.5rem); }
+        .hero-subtitle { font-size: clamp(1rem, 2vw, 1.25rem); }
+    </style>
+</head>
+<body class="bg-[#0a0f1e] text-white font-sans overflow-x-hidden">
+    <!-- PARTICLES -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+        <div class="particle"></div><div class="particle"></div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="nav-blur fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="/" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                        <i class="fas fa-shield-halved text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg font-bold tracking-tight">PESV <span class="text-blue-400">Integral</span></span>
+                        <p class="text-[10px] text-slate-500 -mt-1 tracking-wider">SEGURIDAD VIAL SAAS</p>
+                    </div>
+                </a>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#inicio" class="text-slate-300 hover:text-white text-sm font-medium transition relative group">Inicio<span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all group-hover:w-full"></span></a>
+                    <a href="#planes" class="text-slate-300 hover:text-white text-sm font-medium transition relative group">Planes<span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all group-hover:w-full"></span></a>
+                    <a href="#caracteristicas" class="text-slate-300 hover:text-white text-sm font-medium transition relative group">Características<span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all group-hover:w-full"></span></a>
+                    <a href="#testimonios" class="text-slate-300 hover:text-white text-sm font-medium transition relative group">Testimonios<span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all group-hover:w-full"></span></a>
+                    <a href="#contacto" class="text-slate-300 hover:text-white text-sm font-medium transition relative group">Contacto<span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all group-hover:w-full"></span></a>
+                    <div class="flex items-center gap-3 pl-4 border-l border-slate-700">
+                        <a href="/app" class="text-slate-300 hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition">Ingresar</a>
+                        <a href="/app" class="btn-gradient text-white px-5 py-2 rounded-lg text-sm font-semibold animate-pulse-glow shadow-lg">Comenzar Gratis</a>
+                    </div>
+                </div>
+                <button class="md:hidden text-slate-300" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden px-4 pb-4 bg-[#0a0f1e]/95 backdrop-blur-lg">
+            <a href="#inicio" class="block py-3 text-slate-300 border-b border-slate-800">Inicio</a>
+            <a href="#planes" class="block py-3 text-slate-300 border-b border-slate-800">Planes</a>
+            <a href="#caracteristicas" class="block py-3 text-slate-300 border-b border-slate-800">Características</a>
+            <a href="#testimonios" class="block py-3 text-slate-300 border-b border-slate-800">Testimonios</a>
+            <a href="#contacto" class="block py-3 text-slate-300 border-b border-slate-800">Contacto</a>
+            <div class="flex gap-3 mt-4">
+                <a href="/app" class="flex-1 text-center border border-slate-600 text-slate-300 py-3 rounded-lg text-sm font-medium">Ingresar</a>
+                <a href="/app" class="flex-1 text-center btn-gradient text-white py-3 rounded-lg text-sm font-semibold">Comenzar Gratis</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section id="inicio" class="hero-gradient min-h-screen flex items-center relative overflow-hidden pt-20">
+        <div class="absolute inset-0">
+            <div class="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px]"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-[100px]"></div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10 w-full">
+            <div class="text-center max-w-4xl mx-auto">
+                <div class="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-5 py-2 text-sm text-blue-400 animate-slide-up mb-6">
+                    <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    <span class="font-medium">Cumple con <strong>Resolución 40595 de 2022</strong> del Ministerio de Transporte</span>
+                </div>
+                
+                <h1 class="hero-title font-bold leading-tight animate-slide-up delay-1 mb-6">
+                    La plataforma <span class="text-gradient">#1</span> en<br>
+                    <span class="text-gradient-blue">Seguridad Vial Empresarial</span>
+                </h1>
+                
+                <p class="hero-subtitle text-slate-400 max-w-3xl mx-auto animate-slide-up delay-2 mb-10 leading-relaxed">
+                    <strong class="text-white">+120 empresas</strong> ya gestionan su Plan Estratégico de Seguridad Vial con nosotros. 
+                    La solución SAAS más completa para cumplir con la normativa colombiana. 
+                    <strong class="text-white">4 fases, 25 pasos, 100% en la nube.</strong>
+                </p>
+
+                <div class="flex flex-wrap justify-center gap-4 animate-slide-up delay-3 mb-12">
+                    <a href="#planes" class="btn-gradient text-white px-8 py-4 rounded-xl text-lg font-bold inline-flex items-center gap-2 shadow-2xl">
+                        <i class="fas fa-crown"></i>
+                        Ver Planes y Precios
+                        <i class="fas fa-arrow-right text-sm"></i>
+                    </a>
+                    <a href="/app" class="border border-slate-600 hover:border-blue-500/50 text-slate-300 hover:text-white px-8 py-4 rounded-xl text-lg font-semibold inline-flex items-center gap-2 transition-all group">
+                        <i class="fas fa-play-circle text-blue-400 text-xl group-hover:scale-110 transition-transform"></i>
+                        Probar Demo Gratis
+                    </a>
+                </div>
+
+                <div class="flex flex-wrap justify-center items-center gap-8 text-sm text-slate-500 animate-slide-up delay-4">
+                    <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-400"></i><span>Sin instalación</span></div>
+                    <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-400"></i><span>Multi-empresa</span></div>
+                    <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-400"></i><span>Soporte 24/7</span></div>
+                    <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-400"></i><span>Actualizaciones gratis</span></div>
+                    <div class="flex items-center gap-2"><i class="fas fa-check-circle text-green-400"></i><span>14 días gratis</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TRUSTED BY -->
+    <section class="py-12 bg-[#0a0f1e] border-y border-slate-800/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-xs text-slate-600 mb-8 uppercase tracking-[4px] font-semibold">Empresas que confían en nosotros</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-items-center">
+                <div class="text-xl font-bold text-slate-700 hover:text-slate-500 transition">Transportes</div>
+                <div class="text-xl font-bold text-slate-700 hover:text-slate-500 transition">Logística</div>
+                <div class="text-xl font-bold text-slate-700 hover:text-slate-500 transition">Flota Nacional</div>
+                <div class="text-xl font-bold text-slate-700 hover:text-slate-500 transition">Carga Express</div>
+                <div class="text-xl font-bold text-slate-700 hover:text-slate-500 transition">Rápidos</div>
+                <div class="text-xl font-bold text-slate-700 hover:text-slate-500 transition">Seguridad Vial</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MENSAJE IMPACTANTE -->
+    <section class="py-20 bg-[#0f172a]">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="animate-slide-up">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
+                    <i class="fas fa-shield-halved text-white text-3xl"></i>
+                </div>
+                <h2 class="text-3xl md:text-5xl font-bold mb-6 leading-tight">
+                    La <span class="text-gradient">mejor plataforma</span> para tu<br>
+                    Plan de Seguridad Vial
+                </h2>
+                <p class="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+                    Olvídate del papeleo, los archivos desorganizados y las planillas en Excel. 
+                    <strong class="text-white">PESV Integral</strong> te ofrece una solución completa, 
+                    automatizada y profesional para que tu empresa cumpla con la 
+                    <strong class="text-white">Resolución 40595 de 2022</strong> de manera fácil y rápida.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+                    <div class="bg-slate-800/30 rounded-xl p-6 border border-slate-700/30">
+                        <div class="text-4xl font-bold text-blue-400 mb-2">100%</div>
+                        <p class="text-sm text-slate-400">Cumplimiento normativo garantizado</p>
+                    </div>
+                    <div class="bg-slate-800/30 rounded-xl p-6 border border-slate-700/30">
+                        <div class="text-4xl font-bold text-green-400 mb-2">-70%</div>
+                        <p class="text-sm text-slate-400">Menos tiempo en gestión documental</p>
+                    </div>
+                    <div class="bg-slate-800/30 rounded-xl p-6 border border-slate-700/30">
+                        <div class="text-4xl font-bold text-purple-400 mb-2">+50%</div>
+                        <p class="text-sm text-slate-400">Más eficiencia en tu equipo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PLANES DE PRECIO -->
+    <section id="planes" class="py-24 bg-[#0a0f1e] relative">
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute top-20 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px]"></div>
+            <div class="absolute bottom-20 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[100px]"></div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-16">
+                <span class="text-blue-400 text-sm font-semibold uppercase tracking-[4px]">Planes</span>
+                <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-6">
+                    Elige el plan <span class="text-gradient">ideal</span> para tu empresa
+                </h2>
+                <p class="text-slate-400 max-w-2xl mx-auto text-lg">
+                    Todos los planes incluyen las <strong class="text-white">4 fases del PESV</strong>, 
+                    <strong class="text-white">25 pasos</strong> y gestión de evidencias. 
+                    Escala según tus necesidades.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Básico -->
+                <div class="plan-card bg-slate-800/40 rounded-2xl p-8 border border-slate-700/30">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-slate-700/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-building text-slate-400 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold">Básico</h3>
+                        <p class="text-sm text-slate-500">Para pequeñas empresas</p>
+                    </div>
+                    <div class="text-center mb-6">
+                        <span class="text-5xl font-bold">$49</span>
+                        <span class="text-slate-500">/mes</span>
+                        <p class="text-xs text-slate-600 mt-2">Facturación mensual</p>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>1 empresa</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Hasta 3 usuarios</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>4 fases PHVA completas</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>25 pasos del PESV</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Gestión de evidencias</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Reportes PDF básicos</span></li>
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><div class="w-5 h-5 bg-slate-700/30 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-times text-slate-600 text-xs"></i></div><span>Indicadores avanzados</span></li>
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><div class="w-5 h-5 bg-slate-700/30 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-times text-slate-600 text-xs"></i></div><span>Soporte prioritario</span></li>
+                    </ul>
+                    <a href="/app" class="block w-full text-center border border-slate-600 hover:border-blue-500/50 text-white py-3 rounded-xl font-semibold transition-all hover:bg-slate-700/30">Comenzar</a>
+                </div>
+
+                <!-- Profesional (POPULAR) -->
+                <div class="plan-card popular bg-slate-800/40 rounded-2xl p-8 border-2 border-blue-500/50 scale-105">
+                    <div class="popular-badge"><i class="fas fa-star mr-1"></i> MÁS POPULAR</div>
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-crown text-blue-400 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold">Profesional</h3>
+                        <p class="text-sm text-slate-500">Para medianas empresas</p>
+                    </div>
+                    <div class="text-center mb-6">
+                        <span class="text-5xl font-bold">$99</span>
+                        <span class="text-slate-500">/mes</span>
+                        <p class="text-xs text-slate-600 mt-2">Facturación mensual</p>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>1 empresa</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Hasta 10 usuarios</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>4 fases PHVA completas</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>25 pasos del PESV</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Gestión de evidencias</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Reportes PDF avanzados</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Indicadores de gestión</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Auditorías ilimitadas</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Soporte prioritario 24/7</span></li>
+                    </ul>
+                    <a href="/app" class="block w-full text-center btn-gradient text-white py-3 rounded-xl font-semibold shadow-lg">Elegir Profesional</a>
+                </div>
+
+                <!-- Empresarial -->
+                <div class="plan-card bg-slate-800/40 rounded-2xl p-8 border border-slate-700/30">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-city text-purple-400 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold">Empresarial</h3>
+                        <p class="text-sm text-slate-500">Para grandes organizaciones</p>
+                    </div>
+                    <div class="text-center mb-6">
+                        <span class="text-5xl font-bold">$199</span>
+                        <span class="text-slate-500">/mes</span>
+                        <p class="text-xs text-slate-600 mt-2">Facturación mensual</p>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Empresas ilimitadas</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Usuarios ilimitados</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>4 fases PHVA completas</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>25 pasos del PESV</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Gestión de evidencias</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Reportes PDF avanzados</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Indicadores avanzados</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Auditorías ilimitadas</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Soporte 24/7 dedicado</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>API personalizada</span></li>
+                        <li class="flex items-center gap-3 text-sm"><div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-check text-green-400 text-xs"></i></div><span>Capacitación incluida</span></li>
+                    </ul>
+                    <a href="/app" class="block w-full text-center border border-slate-600 hover:border-purple-500/50 text-white py-3 rounded-xl font-semibold transition-all hover:bg-slate-700/30">Contactar</a>
+                </div>
+            </div>
+
+            <!-- Nota al pie de planes -->
+            <p class="text-center text-sm text-slate-600 mt-8">
+                <i class="fas fa-shield-alt text-blue-400 mr-2"></i>
+                Todos los planes incluyen <strong class="text-slate-400">14 días de prueba gratuita</strong>. 
+                Sin compromiso. Cancela cuando quieras.
+            </p>
+        </div>
+    </section>
+
+    <!-- CARACTERÍSTICAS -->
+    <section id="caracteristicas" class="py-24 bg-[#0f172a] relative">
+        <div class="absolute inset-0">
+            <div class="absolute top-0 left-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px]"></div>
+            <div class="absolute bottom-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full blur-[80px]"></div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-16">
+                <span class="text-blue-400 text-sm font-semibold uppercase tracking-[4px]">Características</span>
+                <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-6">
+                    Todo lo que tu empresa <span class="text-gradient">necesita</span>
+                </h2>
+                <p class="text-slate-400 max-w-2xl mx-auto text-lg">
+                    Sistema completo basado en el ciclo PHVA según la <strong class="text-white">Resolución 40595 de 2022</strong>
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="feature-card bg-slate-800/20 rounded-xl p-8 border border-slate-700/30 group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-layer-group text-blue-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 group-hover:text-blue-400 transition">4 Fases PHVA</h3>
+                    <p class="text-slate-400 leading-relaxed">Planificar, Hacer, Verificar y Actuar. Las 4 fases con sus 25 pasos según la normativa colombiana.</p>
+                </div>
+                <div class="feature-card bg-slate-800/20 rounded-xl p-8 border border-slate-700/30 group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-file-circle-check text-green-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 group-hover:text-green-400 transition">Gestión de Evidencias</h3>
+                    <p class="text-slate-400 leading-relaxed">Registra y gestiona evidencias de cada paso con estados, documentos y seguimiento en tiempo real.</p>
+                </div>
+                <div class="feature-card bg-slate-800/20 rounded-xl p-8 border border-slate-700/30 group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-chart-line text-purple-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 group-hover:text-purple-400 transition">Indicadores de Gestión</h3>
+                    <p class="text-slate-400 leading-relaxed">Crea indicadores con metas, registra valores históricos y visualiza el cumplimiento en tiempo real.</p>
+                </div>
+                <div class="feature-card bg-slate-800/20 rounded-xl p-8 border border-slate-700/30 group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-file-pdf text-yellow-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 group-hover:text-yellow-400 transition">Reportes PDF</h3>
+                    <p class="text-slate-400 leading-relaxed">Genera reportes profesionales en PDF con el avance completo del PESV para presentar en auditorías.</p>
+                </div>
+                <div class="feature-card bg-slate-800/20 rounded-xl p-8 border border-slate-700/30 group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-users text-red-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 group-hover:text-red-400 transition">Multi-empresa</h3>
+                    <p class="text-slate-400 leading-relaxed">Sistema SAAS con datos aislados. Cada empresa solo ve sus datos. Ideal para consultores y grupos empresariales.</p>
+                </div>
+                <div class="feature-card bg-slate-800/20 rounded-xl p-8 border border-slate-700/30 group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-pink-500/20 to-pink-600/20 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-arrows-rotate text-pink-400 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 group-hover:text-pink-400 transition">Mejora Continua</h3>
+                    <p class="text-slate-400 leading-relaxed">Acciones correctivas, auditorías internas/externas y revisión por la dirección para la mejora continua.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="py-16 bg-[#0a0f1e] border-y border-slate-800/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4">
+                <div class="stat-item text-center py-4">
+                    <p class="text-5xl font-bold text-gradient-blue">25</p>
+                    <p class="text-sm text-slate-500 mt-2">Pasos del PESV</p>
+                </div>
+                <div class="stat-item text-center py-4">
+                    <p class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400">4</p>
+                    <p class="text-sm text-slate-500 mt-2">Fases PHVA</p>
+                </div>
+                <div class="stat-item text-center py-4">
+                    <p class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">100%</p>
+                    <p class="text-sm text-slate-500 mt-2">Resolución 40595</p>
+                </div>
+                <div class="stat-item text-center py-4">
+                    <p class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">24/7</p>
+                    <p class="text-sm text-slate-500 mt-2">Soporte</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TESTIMONIOS -->
+    <section id="testimonios" class="py-24 bg-[#0f172a] relative">
+        <div class="absolute inset-0">
+            <div class="absolute top-1/2 left-1/4 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px]"></div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-16">
+                <span class="text-blue-400 text-sm font-semibold uppercase tracking-[4px]">Testimonios</span>
+                <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-6">
+                    Lo que dicen nuestros <span class="text-gradient">clientes</span>
+                </h2>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="testimonial-card rounded-xl p-8">
+                    <div class="flex items-center gap-1 mb-4">
+                        <i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-slate-300 mb-6 leading-relaxed">"Excelente plataforma para gestionar el PESV. Nos ayudó a organizar toda la documentación y cumplir con la resolución. Los reportes PDF son muy profesionales."</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center font-bold text-sm">CR</div>
+                        <div><p class="font-semibold">Carlos Rodríguez</p><p class="text-xs text-slate-500">Director de Seguridad - Transportes Rápidos S.A.</p></div>
+                    </div>
+                </div>
+                <div class="testimonial-card rounded-xl p-8">
+                    <div class="flex items-center gap-1 mb-4">
+                        <i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-slate-300 mb-6 leading-relaxed">"Implementamos el PESV en tiempo récord. Las 4 fases están muy bien estructuradas y el sistema nos guía paso a paso. Muy intuitivo y completo."</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center font-bold text-sm">ML</div>
+                        <div><p class="font-semibold">María López</p><p class="text-xs text-slate-500">Gerente HSEQ - Logística del Valle</p></div>
+                    </div>
+                </div>
+                <div class="testimonial-card rounded-xl p-8">
+                    <div class="flex items-center gap-1 mb-4">
+                        <i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i><i class="fas fa-star text-yellow-400"></i>
+                        <i class="fas fa-star text-yellow-400"></i>
+                    </div>
+                    <p class="text-slate-300 mb-6 leading-relaxed">"La función multi-empresa nos permite gestionar varias filiales desde una sola plataforma. El soporte ha sido excepcional, siempre están disponibles."</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center font-bold text-sm">AG</div>
+                        <div><p class="font-semibold">Andrés Gómez</p><p class="text-xs text-slate-500">CEO - Flota Nacional S.A.S.</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <section id="contacto" class="py-24 hero-gradient relative overflow-hidden">
+        <div class="absolute inset-0">
+            <div class="absolute top-0 left-1/3 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px]"></div>
+            <div class="absolute bottom-0 right-1/3 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px]"></div>
+        </div>
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <div class="animate-scale-in">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
+                    <i class="fas fa-shield-halved text-white text-3xl"></i>
+                </div>
+                <h2 class="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                    ¿Listo para llevar tu <span class="text-gradient">PESV</span><br>al siguiente nivel?
+                </h2>
+                <p class="text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+                    Únete a las <strong class="text-white">+120 empresas</strong> que ya confían en nosotros. 
+                    Comienza hoy con <strong class="text-white">14 días de prueba gratuita</strong>. 
+                    Sin instalación, sin compromiso.
+                </p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a href="/app" class="btn-gradient text-white px-10 py-4 rounded-xl text-lg font-bold inline-flex items-center gap-2 shadow-2xl">
+                        <i class="fas fa-rocket"></i>
+                        Probar Gratis por 14 Días
+                        <i class="fas fa-arrow-right text-sm"></i>
+                    </a>
+                    <a href="mailto:info@pesvintegral.com" class="border border-slate-500 hover:border-blue-500/50 text-slate-300 hover:text-white px-10 py-4 rounded-xl text-lg font-semibold inline-flex items-center gap-2 transition-all">
+                        <i class="fas fa-envelope"></i>
+                        Hablar con Ventas
+                    </a>
+                </div>
+                <div class="flex flex-wrap justify-center items-center gap-6 mt-10 text-sm text-slate-500">
+                    <span><i class="fas fa-credit-card text-blue-400 mr-2"></i>Sin tarjeta de crédito</span>
+                    <span><i class="fas fa-times-circle text-blue-400 mr-2"></i>Cancela cuando quieras</span>
+                    <span><i class="fas fa-headset text-blue-400 mr-2"></i>Soporte incluido</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-[#0a0f1e] border-t border-slate-800/30 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-shield-halved text-white"></i>
+                        </div>
+                        <div><span class="text-lg font-bold">PESV <span class="text-blue-400">Integral</span></span></div>
+                    </div>
+                    <p class="text-sm text-slate-600 leading-relaxed">Sistema SAAS para la gestión del Plan Estratégico de Seguridad Vial según Resolución 40595 de 2022.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-xs uppercase tracking-[3px] text-slate-500 mb-4">Producto</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#caracteristicas" class="text-sm text-slate-600 hover:text-white transition">Características</a></li>
+                        <li><a href="#planes" class="text-sm text-slate-600 hover:text-white transition">Planes</a></li>
+                        <li><a href="/app" class="text-sm text-slate-600 hover:text-white transition">Demo gratuita</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-xs uppercase tracking-[3px] text-slate-500 mb-4">Legal</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-sm text-slate-600 hover:text-white transition">Términos y condiciones</a></li>
+                        <li><a href="#" class="text-sm text-slate-600 hover:text-white transition">Política de privacidad</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-xs uppercase tracking-[3px] text-slate-500 mb-4">Contacto</h4>
+                    <ul class="space-y-3">
+                        <li class="text-sm text-slate-600 flex items-center gap-2"><i class="fas fa-envelope text-blue-400 w-4"></i>info@pesvintegral.com</li>
+                        <li class="text-sm text-slate-600 flex items-center gap-2"><i class="fas fa-phone text-blue-400 w-4"></i>+57 1 234 5678</li>
+                        <li class="text-sm text-slate-600 flex items-center gap-2"><i class="fas fa-map-marker-alt text-blue-400 w-4"></i>Bogotá, Colombia</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-slate-800/30 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p class="text-sm text-slate-700">© 2024 PESV Integral. Todos los derechos reservados.</p>
+                <div class="flex items-center gap-3">
+                    <a href="#" class="w-10 h-10 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-600 hover:text-white hover:bg-slate-700/50 transition"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="w-10 h-10 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-600 hover:text-white hover:bg-slate-700/50 transition"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-600 hover:text-white hover:bg-slate-700/50 transition"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="w-10 h-10 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-600 hover:text-white hover:bg-slate-700/50 transition"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

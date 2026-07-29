@@ -63,9 +63,27 @@ app.use('/api/acciones', accionesRoutes);
 const auditoriaRoutes = require('./routes/auditorias');
 app.use('/api/auditorias', auditoriaRoutes);
 
-// Ruta principal - SPA
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// --- Resoluciones ---
+const resolucionRoutes = require('./routes/resoluciones');
+app.use('/api/resoluciones', resolucionRoutes);
+
+// --- Super Admin ---
+const superAdminRoutes = require('./routes/superadmin');
+app.use('/api/superadmin', superAdminRoutes);
+
+// Ruta principal - Landing Page
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
+
+// Ruta de la aplicación SPA
+app.get('/app', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
+});
+
+// Redirigir cualquier otra ruta a la landing
+app.use((req, res) => {
+    res.redirect('/');
 });
 
 // Manejo de errores global
