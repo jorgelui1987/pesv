@@ -31,20 +31,22 @@ router.post('/', verificarToken, async (req, res) => {
     const { paso_id, estado, descripcion, archivo_nombre, archivo_ruta, observaciones, fecha_ejecucion } = req.body;
     if (!paso_id) return res.status(400).json({ error: 'El paso es requerido' });
 
+    const fechaValida = fecha_ejecucion && fecha_ejecucion.trim() !== '' ? fecha_ejecucion : null;
     const result = await queryRun(`
         INSERT INTO evidencias (paso_id, empresa_id, usuario_id, estado, descripcion, archivo_nombre, archivo_ruta, observaciones, fecha_ejecucion)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [paso_id, req.usuario.empresa_id, req.usuario.id, estado || 'pendiente', descripcion || '', archivo_nombre || '', archivo_ruta || '', observaciones || '', fecha_ejecucion || null]);
+    `, [paso_id, req.usuario.empresa_id, req.usuario.id, estado || 'pendiente', descripcion || '', archivo_nombre || '', archivo_ruta || '', observaciones || '', fechaValida]);
 
     res.status(201).json({ id: result.lastInsertRowid, mensaje: 'Evidencia creada' });
 });
 
 router.put('/:id', verificarToken, async (req, res) => {
     const { estado, descripcion, archivo_nombre, archivo_ruta, observaciones, fecha_ejecucion } = req.body;
+    const fechaValida2 = fecha_ejecucion && fecha_ejecucion.trim() !== '' ? fecha_ejecucion : null;
     await queryRun(`
         UPDATE evidencias SET estado=?, descripcion=?, archivo_nombre=?, archivo_ruta=?, observaciones=?, fecha_ejecucion=?, updated_at=CURRENT_TIMESTAMP
         WHERE id=? AND empresa_id=?
-    `, [estado, descripcion, archivo_nombre, archivo_ruta, observaciones, fecha_ejecucion, req.params.id, req.usuario.empresa_id]);
+    `, [estado, descripcion, archivo_nombre, archivo_ruta, observaciones, fechaValida2, req.params.id, req.usuario.empresa_id]);
     res.json({ mensaje: 'Evidencia actualizada' });
 });
 
