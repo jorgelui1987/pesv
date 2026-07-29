@@ -1,0 +1,4 @@
+node_modules/
+pesv_saas.db
+package-lock.json
+.env

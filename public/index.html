@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PESV Integral - Sistema de Gestión de Seguridad Vial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { transition: all 0.2s ease; }
+        .sidebar-item { cursor: pointer; padding: 0.75rem 1rem; border-radius: 0.5rem; display: flex; align-items: center; gap: 0.75rem; }
+        .sidebar-item:hover { background: rgba(255,255,255,0.1); }
+        .sidebar-item.active { background: #1e40af; color: white; }
+        .card { background: white; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; }
+        .btn-primary { background: #2563eb; color: white; padding: 0.5rem 1.25rem; border-radius: 0.5rem; font-weight: 600; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary { background: #e2e8f0; color: #475569; padding: 0.5rem 1.25rem; border-radius: 0.5rem; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn-danger { background: #dc2626; color: white; padding: 0.5rem 1.25rem; border-radius: 0.5rem; }
+        .btn-danger:hover { background: #b91c1c; }
+        .input-field { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; outline: none; }
+        .input-field:focus { border-color: #2563eb; ring: 2px solid #2563eb; }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .badge-pendiente { background: #fef3c7; color: #92400e; }
+        .badge-en_proceso { background: #dbeafe; color: #1e40af; }
+        .badge-finalizado { background: #d1fae5; color: #065f46; }
+        .badge-no_aplica { background: #e2e8f0; color: #475569; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .modal-content { background: white; border-radius: 1rem; padding: 2rem; width: 100%; max-width: 32rem; max-height: 90vh; overflow-y: auto; }
+        .progress-bar { height: 0.5rem; border-radius: 9999px; background: #e2e8f0; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 9999px; background: linear-gradient(90deg, #2563eb, #3b82f6); transition: width 0.5s ease; }
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .spinner { border: 3px solid #e2e8f0; border-top: 3px solid #2563eb; border-radius: 50%; width: 2rem; height: 2rem; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans">
+
+<div id="app" class="min-h-screen flex">
+    <!-- ============ SIDEBAR ============ -->
+    <aside id="sidebar" class="no-print w-72 bg-slate-900 text-white flex flex-col shadow-2xl hidden">
+        <div class="p-6 border-b border-slate-700">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fas fa-shield-halved text-blue-400"></i>
+                PESV Integral
+            </h1>
+            <p id="empresa-nombre" class="text-xs text-slate-400 mt-1"></p>
+        </div>
+        <nav class="flex-grow p-4 space-y-1" id="sidebar-nav">
+            <div class="sidebar-item active" onclick="navegar('dashboard')">
+                <i class="fas fa-chart-pie w-5"></i> Dashboard
+            </div>
+            <div class="sidebar-item" onclick="navegar('fases')">
+                <i class="fas fa-layer-group w-5"></i> Fases del PESV
+            </div>
+            <div class="sidebar-item" onclick="navegar('evidencias')">
+                <i class="fas fa-file-circle-check w-5"></i> Evidencias
+            </div>
+            <div class="sidebar-item" onclick="navegar('indicadores')">
+                <i class="fas fa-gauge-high w-5"></i> Indicadores
+            </div>
+            <div class="sidebar-item" onclick="navegar('acciones')">
+                <i class="fas fa-arrows-rotate w-5"></i> Acciones de Mejora
+            </div>
+            <div class="sidebar-item" onclick="navegar('auditorias')">
+                <i class="fas fa-clipboard-check w-5"></i> Auditorías
+            </div>
+            <div class="sidebar-item" onclick="navegar('reportes')">
+                <i class="fas fa-file-pdf w-5"></i> Reportes
+            </div>
+            <div class="sidebar-item" onclick="navegar('usuarios')">
+                <i class="fas fa-users w-5"></i> Usuarios
+            </div>
+            <div class="sidebar-item" onclick="navegar('configuracion')">
+                <i class="fas fa-gear w-5"></i> Configuración
+            </div>
+        </nav>
+        <div class="p-4 border-t border-slate-700">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center font-bold" id="avatar-iniciales">A</div>
+                <div class="flex-grow">
+                    <p id="usuario-nombre" class="text-sm font-semibold"></p>
+                    <p id="usuario-rol" class="text-xs text-slate-400"></p>
+                </div>
+                <button onclick="cerrarSesion()" class="text-slate-400 hover:text-white" title="Cerrar sesión">
+                    <i class="fas fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <main class="flex-grow p-6 lg:p-8 overflow-auto">
+        <!-- Loading -->
+        <div id="loading-screen" class="flex items-center justify-center h-96">
+            <div class="text-center">
+                <div class="spinner mx-auto"></div>
+                <p class="mt-4 text-slate-500">Cargando...</p>
+            </div>
+        </div>
+
+        <!-- Login -->
+        <div id="login-screen" class="min-h-screen flex items-center justify-center -m-6 lg:-m-8 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 fade-in">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shield-halved text-white text-2xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">PESV Integral</h2>
+                    <p class="text-slate-500 text-sm mt-1">Sistema de Gestión de Seguridad Vial</p>
+                </div>
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Correo Electrónico</label>
+                        <input type="email" id="login-email" class="input-field" placeholder="admin@pesv.com" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Contraseña</label>
+                        <input type="password" id="login-password" class="input-field" placeholder="••••••••" required>
+                    </div>
+                    <div id="login-error" class="text-red-600 text-sm hidden"></div>
+                    <button type="submit" class="btn-primary w-full py-3 text-base">
+                        <i class="fas fa-right-to-bracket mr-2"></i> Iniciar Sesión
+                    </button>
+                </form>
+                <div class="mt-6 text-center">
+                    <button onclick="mostrarRegistro()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">
+                        <i class="fas fa-building mr-1"></i> Registrar nueva empresa
+                    </button>
+                </div>
+                <div class="mt-4 p-3 bg-slate-50 rounded-lg text-xs text-slate-500">
+                    <p class="font-semibold mb-1">Credenciales de demostración:</p>
+                    <p>Admin: admin@pesv.com / admin123</p>
+                    <p>Coordinador: coordinador@pesv.com / coord123</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registro -->
+        <div id="register-screen" class="min-h-screen flex items-center justify-center -m-6 lg:-m-8 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 hidden">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 fade-in">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-building text-white text-2xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">Registrar Empresa</h2>
+                    <p class="text-slate-500 text-sm mt-1">Crea tu cuenta para empezar</p>
+                </div>
+                <form id="register-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre de la Empresa</label>
+                        <input type="text" id="reg-empresa" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">NIT</label>
+                        <input type="text" id="reg-nit" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre Completo</label>
+                        <input type="text" id="reg-nombre" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Correo Electrónico</label>
+                        <input type="email" id="reg-email" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Contraseña</label>
+                        <input type="password" id="reg-password" class="input-field" minlength="6" required>
+                    </div>
+                    <div id="register-error" class="text-red-600 text-sm hidden"></div>
+                    <button type="submit" class="btn-primary w-full py-3 text-base bg-green-600 hover:bg-green-700">
+                        <i class="fas fa-user-plus mr-2"></i> Crear Cuenta
+                    </button>
+                </form>
+                <div class="mt-6 text-center">
+                    <button onclick="mostrarLogin()" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver al inicio de sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ CONTENEDOR DE VISTAS ============ -->
+        <div id="app-content" class="hidden">
+            <!-- Dashboard -->
+            <div id="view-dashboard" class="view active">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">Dashboard</h2>
+                        <p class="text-slate-500 mt-1">Resumen del avance del PESV</p>
+                    </div>
+                    <button onclick="navegar('reportes')" class="btn-primary text-sm">
+                        <i class="fas fa-file-pdf mr-2"></i> Ver Reportes
+                    </button>
+                </div>
+                <div id="dashboard-content" class="space-y-6">
+                    <div class="flex items-center justify-center h-32">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fases -->
+            <div id="view-fases" class="view hidden">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">Fases del PESV</h2>
+                        <p class="text-slate-500 mt-1">Gestión de las 4 fases según Resolución 40595 de 2022</p>
+                    </div>
+                </div>
+                <div id="fases-content" class="space-y-6">
+                    <div class="flex items-center justify-center h-32">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evidencias -->
+            <div id="view-evidencias" class="view hidden">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">Evidencias</h2>
+                        <p class="text-slate-500 mt-1">Todas las evidencias registradas</p>
+                    </div>
+                </div>
+                <div id="evidencias-content" class="space-y-4">
+                    <div class="flex items-center justify-center h-32">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indicadores -->
+            <div id="view-indicadores" class="view hidden">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">Indicadores de Gestión</h2>
+                        <p class="text-slate-500 mt-1">Monitoreo de indicadores del PESV</p>
+                    </div>
+                    <button onclick="mostrarModalIndicador()" class="btn-primary text-sm">
+                        <i class="fas fa-plus mr-2"></i> Nuevo Indicador
+                    </button>
+                </div>
+                <div id="indicadores-content" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center justify-center h-32 col-span-full">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones de Mejora -->
+            <div id="view-acciones" class="view hidden">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">Acciones de Mejora</h2>
+                        <p class="text-slate-500 mt-1">Plan de acciones correctivas y preventivas</p>
+                    </div>
+                    <button onclick="mostrarModalAccion()" class="btn-primary text-sm">
+                        <i class="fas fa-plus mr-2"></i> Nueva Acción
+                    </button>
+                </div>
+                <div id="acciones-content" class="space-y-4">
+                    <div class="flex items-center justify-center h-32">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auditorías -->
+            <div id="view-auditorias" class="view hidden">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">Auditorías</h2>
+                        <p class="text-slate-500 mt-1">Registro de auditorías internas y externas</p>
+                    </div>
+                    <button onclick="mostrarModalAuditoria()" class="btn-primary text-sm">
+                        <i class="fas fa-plus mr-2"></i> Nueva Auditoría
+                    </button>
+                </div>
+                <div id="auditorias-content" class="space-y-4">
+                    <div class="flex items-center justify-center h-32">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reportes -->
+            <div id="view-reportes" class="view hidden">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">Reportes</h2>
+                        <p class="text-slate-500 mt-1">Generación de informes del PESV</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card hover:shadow-lg cursor-pointer" onclick="generarPDF()">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-file-pdf text-red-600 text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900">Reporte Completo PESV</h3>
+                                <p class="text-sm text-slate-500">Genera un PDF con el detalle completo del avance del plan</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card hover:shadow-lg cursor-pointer" onclick="verAvance()">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-chart-bar text-blue-600 text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900">Reporte de Avance</h3>
+                                <p class="text-sm text-slate-500">Visualiza el avance detallado por fase y paso</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="reporte-avance" class="mt-6 hidden"></div>
+            </div>
+
+            <!-- Usuarios -->
+            <div id="view-usuarios" class="view hidden">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">Usuarios</h2>
+                        <p class="text-slate-500 mt-1">Gestión de usuarios de la empresa</p>
+                    </div>
+                    <button onclick="mostrarModalUsuario()" class="btn-primary text-sm">
+                        <i class="fas fa-user-plus mr-2"></i> Nuevo Usuario
+                    </button>
+                </div>
+                <div id="usuarios-content" class="space-y-4">
+                    <div class="flex items-center justify-center h-32">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuración -->
+            <div id="view-configuracion" class="view hidden">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">Configuración</h2>
+                        <p class="text-slate-500 mt-1">Datos de la empresa</p>
+                    </div>
+                </div>
+                <div id="configuracion-content" class="max-w-2xl">
+                    <div class="flex items-center justify-center h-32">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ============ MODALES ============ -->
+
+<!-- Modal Evidencia -->
+<div id="modal-evidencia" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold" id="modal-evidencia-titulo">Gestionar Evidencia</h3>
+            <button onclick="cerrarModal('modal-evidencia')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+        </div>
+        <form id="form-evidencia" class="space-y-4">
+            <input type="hidden" id="evidencia-paso-id">
+            <input type="hidden" id="evidencia-id">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Estado</label>
+                <select id="evidencia-estado" class="input-field">
+                    <option value="pendiente">Pendiente</option>
+                    <option value="en_proceso">En Proceso</option>
+                    <option value="finalizado">Finalizado</option>
+                    <option value="no_aplica">No Aplica</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Descripción</label>
+                <textarea id="evidencia-descripcion" class="input-field" rows="3" placeholder="Describa la evidencia..."></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre del Archivo</label>
+                <input type="text" id="evidencia-archivo" class="input-field" placeholder="Ej: acta_comite.pdf">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Ruta / Enlace</label>
+                <input type="text" id="evidencia-ruta" class="input-field" placeholder="Ej: C:/Documentos/evidencia.pdf">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha de Ejecución</label>
+                <input type="date" id="evidencia-fecha" class="input-field">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Observaciones</label>
+                <textarea id="evidencia-observaciones" class="input-field" rows="2" placeholder="Observaciones adicionales..."></textarea>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="cerrarModal('modal-evidencia')" class="btn-secondary">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar Evidencia</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Indicador -->
+<div id="modal-indicador" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold">Nuevo Indicador</h3>
+            <button onclick="cerrarModal('modal-indicador')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+        </div>
+        <form id="form-indicador" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre del Indicador</label>
+                <input type="text" id="ind-nombre" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Descripción</label>
+                <textarea id="ind-descripcion" class="input-field" rows="2"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Fórmula</label>
+                <input type="text" id="ind-formula" class="input-field" placeholder="Ej: (N° capacitados / Total conductores) * 100">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Meta</label>
+                    <input type="number" id="ind-meta" class="input-field" step="0.01">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Periodo</label>
+                    <select id="ind-periodo" class="input-field">
+                        <option value="mensual">Mensual</option>
+                        <option value="trimestral">Trimestral</option>
+                        <option value="semestral">Semestral</option>
+                        <option value="anual">Anual</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="cerrarModal('modal-indicador')" class="btn-secondary">Cancelar</button>
+                <button type="submit" class="btn-primary">Crear Indicador</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Acción de Mejora -->
+<div id="modal-accion" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold">Nueva Acción de Mejora</h3>
+            <button onclick="cerrarModal('modal-accion')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+        </div>
+        <form id="form-accion" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Origen</label>
+                <input type="text" id="acc-origen" class="input-field" placeholder="Ej: Auditoría interna, Revisión dirección">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Descripción</label>
+                <textarea id="acc-descripcion" class="input-field" rows="3" required></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Responsable</label>
+                <input type="text" id="acc-responsable" class="input-field">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha Compromiso</label>
+                <input type="date" id="acc-fecha" class="input-field">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="cerrarModal('modal-accion')" class="btn-secondary">Cancelar</button>
+                <button type="submit" class="btn-primary">Crear Acción</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Auditoría -->
+<div id="modal-auditoria" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold">Nueva Auditoría</h3>
+            <button onclick="cerrarModal('modal-auditoria')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+        </div>
+        <form id="form-auditoria" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Tipo</label>
+                    <select id="aud-tipo" class="input-field">
+                        <option value="interna">Interna</option>
+                        <option value="externa">Externa</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha</label>
+                    <input type="date" id="aud-fecha" class="input-field" required>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Auditor</label>
+                <input type="text" id="aud-auditor" class="input-field">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Hallazgos</label>
+                <textarea id="aud-hallazgos" class="input-field" rows="3"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Resultado</label>
+                <textarea id="aud-resultado" class="input-field" rows="2"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="cerrarModal('modal-auditoria')" class="btn-secondary">Cancelar</button>
+                <button type="submit" class="btn-primary">Registrar Auditoría</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Usuario -->
+<div id="modal-usuario" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold">Nuevo Usuario</h3>
+            <button onclick="cerrarModal('modal-usuario')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+        </div>
+        <form id="form-usuario" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre Completo</label>
+                <input type="text" id="user-nombre" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Correo Electrónico</label>
+                <input type="email" id="user-email" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Contraseña</label>
+                <input type="password" id="user-password" class="input-field" minlength="6" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Rol</label>
+                <select id="user-rol" class="input-field">
+                    <option value="coordinador">Coordinador</option>
+                    <option value="admin">Administrador</option>
+                    <option value="consultor">Consultor</option>
+                    <option value="auditor">Auditor</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="cerrarModal('modal-usuario')" class="btn-secondary">Cancelar</button>
+                <button type="submit" class="btn-primary">Crear Usuario</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Registro Indicador -->
+<div id="modal-registro-indicador" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold" id="modal-registro-titulo">Registrar Valor</h3>
+            <button onclick="cerrarModal('modal-registro-indicador')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+        </div>
+        <form id="form-registro-indicador" class="space-y-4">
+            <input type="hidden" id="reg-indicador-id">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Valor</label>
+                <input type="number" id="reg-valor" class="input-field" step="0.01" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha</label>
+                <input type="date" id="reg-fecha" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Observaciones</label>
+                <textarea id="reg-observaciones" class="input-field" rows="2"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="cerrarModal('modal-registro-indicador')" class="btn-secondary">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar Registro</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// ============ CONFIGURACIÓN ============
+const API = '/api';
+let token = localStorage.getItem('pesv_token');
+let usuarioActual = null;
+
+// ============ UTILIDADES ============
+function $(id) { return document.getElementById(id); }
+
+function apiRequest(method, url, data = null) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const config = { method, headers };
+    if (data) config.body = JSON.stringify(data);
+    return fetch(`${API}${url}`, config).then(r => r.json());
+}
+
+function cerrarModal(id) { $(id).classList.add('hidden'); }
+
+function mostrarError(elementId, mensaje) {
+    const el = $(elementId);
+    el.textContent = mensaje;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 5000);
+}
+
+function badgeEstado(estado) {
+    const map = { 'pendiente': 'badge-pendiente', 'en_proceso': 'badge-en_proceso', 'finalizado': 'badge-finalizado', 'no_aplica': 'badge-no_aplica' };
+    const labels = { 'pendiente': 'Pendiente', 'en_proceso': 'En Proceso', 'finalizado': 'Finalizado', 'no_aplica': 'No Aplica' };
+    return `<span class="badge ${map[estado] || 'badge-pendiente'}">${labels[estado] || estado}</span>`;
+}
+
+// ============ AUTENTICACIÓN ============
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('login-email').value;
+    const password = $('login-password').value;
+    const res = await apiRequest('POST', '/auth/login', { email, password });
+    if (res.token) {
+        token = res.token;
+        usuarioActual = res.usuario;
+        localStorage.setItem('pesv_token', token);
+        localStorage.setItem('pesv_usuario', JSON.stringify(usuarioActual));
+        iniciarApp();
+    } else {
+        mostrarError('login-error', res.error || 'Error al iniciar sesión');
+    }
+});
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+        empresa_nombre: $('reg-empresa').value,
+        nit: $('reg-nit').value,
+        nombre: $('reg-nombre').value,
+        email: $('reg-email').value,
+        password: $('reg-password').value
+    };
+    const res = await apiRequest('POST', '/auth/register', data);
+    if (res.mensaje) {
+        alert('Empresa registrada exitosamente. Ahora puede iniciar sesión.');
+        mostrarLogin();
+    } else {
+        mostrarError('register-error', res.error || 'Error al registrar');
+    }
+});
+
+function mostrarRegistro() {
+    $('login-screen').classList.add('hidden');
+    $('register-screen').classList.remove('hidden');
+}
+
+function mostrarLogin() {
+    $('register-screen').classList.add('hidden');
+    $('login-screen').classList.remove('hidden');
+}
+
+function cerrarSesion() {
+    token = null;
+    usuarioActual = null;
+    localStorage.removeItem('pesv_token');
+    localStorage.removeItem('pesv_usuario');
+    $('sidebar').classList.add('hidden');
+    $('app-content').classList.add('hidden');
+    $('login-screen').classList.remove('hidden');
+    $('login-password').value = '';
+}
+
+// ============ INICIO ============
+function iniciarApp() {
+    $('login-screen').classList.add('hidden');
+    $('register-screen').classList.add('hidden');
+    $('loading-screen').classList.add('hidden');
+    $('sidebar').classList.remove('hidden');
+    $('app-content').classList.remove('hidden');
+
+    // Datos del usuario
+    $('usuario-nombre').textContent = usuarioActual.nombre;
+    $('usuario-rol').textContent = usuarioActual.rol.charAt(0).toUpperCase() + usuarioActual.rol.slice(1);
+    $('empresa-nombre').textContent = usuarioActual.empresa_nombre;
+    $('avatar-iniciales').textContent = usuarioActual.nombre.charAt(0).toUpperCase();
+
+    // Cargar vista inicial
+    navegar('dashboard');
+}
+
+// ============ NAVEGACIÓN ============
+function navegar(vista) {
+    // Ocultar todas las vistas
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    // Mostrar la vista seleccionada
+    const view = $(`view-${vista}`);
+    if (view) view.classList.remove('hidden');
+
+    // Actualizar sidebar
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    const items = document.querySelectorAll('.sidebar-item');
+    const idx = ['dashboard','fases','evidencias','indicadores','acciones','auditorias','reportes','usuarios','configuracion'].indexOf(vista);
+    if (idx >= 0 && items[idx]) items[idx].classList.add('active');
+
+    // Cargar datos según la vista
+    switch(vista) {
+        case 'dashboard': cargarDashboard(); break;
+        case 'fases': cargarFases(); break;
+        case 'evidencias': cargarEvidencias(); break;
+        case 'indicadores': cargarIndicadores(); break;
+        case 'acciones': cargarAcciones(); break;
+        case 'auditorias': cargarAuditorias(); break;
+        case 'usuarios': cargarUsuarios(); break;
+        case 'configuracion': cargarConfiguracion(); break;
+    }
+}
+
+// ============ DASHBOARD ============
+async function cargarDashboard() {
+    const container = $('dashboard-content');
+    container.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+
+    const data = await apiRequest('GET', '/dashboard');
+    if (!data.resumen_fases) { container.innerHTML = '<p class="text-red-500">Error al cargar dashboard</p>'; return; }
+
+    let html = `
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="card text-center">
+            <div class="text-3xl font-bold text-blue-600">${data.porcentaje_global || 0}%</div>
+            <p class="text-sm text-slate-500 mt-1">Avance Global</p>
+        </div>
+        <div class="card text-center">
+            <div class="text-3xl font-bold text-green-600">${data.evidencias_por_estado?.finalizado || 0}</div>
+            <p class="text-sm text-slate-500 mt-1">Evidencias Completadas</p>
+        </div>
+        <div class="card text-center">
+            <div class="text-3xl font-bold text-yellow-600">${data.evidencias_por_estado?.en_proceso || 0}</div>
+            <p class="text-sm text-slate-500 mt-1">En Proceso</p>
+        </div>
+        <div class="card text-center">
+            <div class="text-3xl font-bold text-red-600">${data.acciones_abiertas || 0}</div>
+            <p class="text-sm text-slate-500 mt-1">Acciones Abiertas</p>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="font-bold text-lg mb-4">Avance por Fase</h3>
+        <div class="space-y-4">`;
+
+    for (const fase of data.resumen_fases) {
+        html += `
+        <div>
+            <div class="flex justify-between text-sm mb-1">
+                <span class="font-semibold">${fase.nombre}</span>
+                <span>${fase.completados}/${fase.total} (${fase.porcentaje}%)</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:${fase.porcentaje}%"></div>
+            </div>
+        </div>`;
+    }
+
+    html += `</div></div>`;
+
+    if (data.ultimas_evidencias?.length) {
+        html += `
+        <div class="card">
+            <h3 class="font-bold text-lg mb-4">Últimas Evidencias</h3>
+            <div class="space-y-3">`;
+        for (const ev of data.ultimas_evidencias) {
+            html += `
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div>
+                    <p class="font-semibold text-sm">${ev.paso_nombre}</p>
+                    <p class="text-xs text-slate-500">${ev.usuario_nombre} - ${new Date(ev.updated_at).toLocaleDateString('es-CO')}</p>
+                </div>
+                ${badgeEstado(ev.estado)}
+            </div>`;
+        }
+        html += `</div></div>`;
+    }
+
+    container.innerHTML = html;
+}
+
+// ============ FASES ============
+async function cargarFases() {
+    const container = $('fases-content');
+    container.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+
+    const fases = await apiRequest('GET', '/fases');
+    if (!Array.isArray(fases)) { container.innerHTML = '<p class="text-red-500">Error al cargar fases</p>'; return; }
+
+    let html = '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">';
+    for (const fase of fases) {
+        const detalle = await apiRequest('GET', `/fases/${fase.id}`);
+        const pasos = detalle.pasos || [];
+        const completados = pasos.filter(p => p.evidencias_completadas > 0).length;
+        const pct = pasos.length > 0 ? Math.round((completados / pasos.length) * 100) : 0;
+
+        html += `
+        <div class="card fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-lg text-slate-900">${fase.nombre}</h3>
+                <span class="text-sm font-bold text-blue-600">${pct}%</span>
+            </div>
+            <div class="progress-bar mb-4">
+                <div class="progress-fill" style="width:${pct}%"></div>
+            </div>
+            <div class="space-y-2">`;
+
+        for (const paso of pasos) {
+            const estadoEv = paso.evidencias_completadas > 0 ? 'finalizado' : 'pendiente';
+            html += `
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer" onclick="abrirModalEvidencia(${paso.id}, '${paso.nombre}')">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold text-slate-400 w-8">${paso.codigo}</span>
+                    <div>
+                        <p class="text-sm font-semibold">${paso.nombre}</p>
+                        <p class="text-xs text-slate-400">${paso.responsable || 'Sin responsable'}</p>
+                    </div>
+                </div>
+                ${badgeEstado(estadoEv)}
+            </div>`;
+        }
+
+        html += `</div></div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// ============ EVIDENCIAS ============
+async function cargarEvidencias() {
+    const container = $('evidencias-content');
+    container.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+
+    const evidencias = await apiRequest('GET', '/evidencias');
+    if (!Array.isArray(evidencias)) { container.innerHTML = '<p class="text-red-500">Error al cargar evidencias</p>'; return; }
+
+    if (evidencias.length === 0) {
+        container.innerHTML = `
+        <div class="card text-center py-12">
+            <i class="fas fa-file-circle-plus text-4xl text-slate-300 mb-4"></i>
+            <p class="text-slate-500">No hay evidencias registradas aún</p>
+            <p class="text-sm text-slate-400 mt-1">Vaya a la sección de Fases para gestionar evidencias</p>
+        </div>`;
+        return;
+    }
+
+    let html = `<div class="card"><div class="overflow-x-auto"><table class="w-full text-sm">
+        <thead><tr class="text-left text-slate-500 border-b">
+            <th class="pb-3 font-semibold">Paso</th>
+            <th class="pb-3 font-semibold">Estado</th>
+            <th class="pb-3 font-semibold">Responsable</th>
+            <th class="pb-3 font-semibold">Fecha</th>
+            <th class="pb-3 font-semibold">Acciones</th>
+        </tr></thead><tbody>`;
+
+    for (const ev of evidencias) {
+        html += `
+        <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="py-3">
+                <p class="font-semibold">${ev.paso_nombre || 'N/A'}</p>
+            </td>
+            <td class="py-3">${badgeEstado(ev.estado)}</td>
+            <td class="py-3 text-slate-600">${ev.usuario_nombre}</td>
+            <td class="py-3 text-slate-600">${new Date(ev.created_at).toLocaleDateString('es-CO')}</td>
+            <td class="py-3">
+                <button onclick="editarEvidencia(${ev.id})" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
+                <button onclick="eliminarEvidencia(${ev.id})" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>`;
+    }
+
+    html += `</tbody></table></div></div>`;
+    container.innerHTML = html;
+}
+
+// ============ GESTIÓN DE EVIDENCIAS ============
+function abrirModalEvidencia(pasoId, pasoNombre) {
+    $('evidencia-paso-id').value = pasoId;
+    $('evidencia-id').value = '';
+    $('modal-evidencia-titulo').textContent = `Gestionar Evidencia: ${pasoNombre}`;
+    $('evidencia-estado').value = 'pendiente';
+    $('evidencia-descripcion').value = '';
+    $('evidencia-archivo').value = '';
+    $('evidencia-ruta').value = '';
+    $('evidencia-fecha').value = new Date().toISOString().split('T')[0];
+    $('evidencia-observaciones').value = '';
+    $('modal-evidencia').classList.remove('hidden');
+}
+
+async function editarEvidencia(id) {
+    const res = await apiRequest('GET', `/evidencias`);
+    const ev = Array.isArray(res) ? res.find(e => e.id === id) : null;
+    if (!ev) return;
+
+    $('evidencia-id').value = ev.id;
+    $('evidencia-paso-id').value = ev.paso_id;
+    $('modal-evidencia-titulo').textContent = 'Editar Evidencia';
+    $('evidencia-estado').value = ev.estado;
+    $('evidencia-descripcion').value = ev.descripcion || '';
+    $('evidencia-archivo').value = ev.archivo_nombre || '';
+    $('evidencia-ruta').value = ev.archivo_ruta || '';
+    $('evidencia-fecha').value = ev.fecha_ejecucion || '';
+    $('evidencia-observaciones').value = ev.observaciones || '';
+    $('modal-evidencia').classList.remove('hidden');
+}
+
+async function eliminarEvidencia(id) {
+    if (!confirm('¿Está seguro de eliminar esta evidencia?')) return;
+    await apiRequest('DELETE', `/evidencias/${id}`);
+    cargarEvidencias();
+}
+
+document.getElementById('form-evidencia').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = $('evidencia-id').value;
+    const data = {
+        paso_id: parseInt($('evidencia-paso-id').value),
+        estado: $('evidencia-estado').value,
+        descripcion: $('evidencia-descripcion').value,
+        archivo_nombre: $('evidencia-archivo').value,
+        archivo_ruta: $('evidencia-ruta').value,
+        fecha_ejecucion: $('evidencia-fecha').value,
+        observaciones: $('evidencia-observaciones').value
+    };
+
+    if (id) {
+        await apiRequest('PUT', `/evidencias/${id}`, data);
+    } else {
+        await apiRequest('POST', '/evidencias', data);
+    }
+    cerrarModal('modal-evidencia');
+    cargarFases();
+    cargarEvidencias();
+});
+
+// ============ INDICADORES ============
+async function cargarIndicadores() {
+    const container = $('indicadores-content');
+    container.innerHTML = '<div class="flex items-center justify-center h-32 col-span-full"><div class="spinner"></div></div>';
+
+    const indicadores = await apiRequest('GET', '/indicadores');
+    if (!Array.isArray(indicadores)) { container.innerHTML = '<p class="text-red-500 col-span-full">Error al cargar indicadores</p>'; return; }
+
+    if (indicadores.length === 0) {
+        container.innerHTML = `
+        <div class="card text-center py-12 col-span-full">
+            <i class="fas fa-gauge text-4xl text-slate-300 mb-4"></i>
+            <p class="text-slate-500">No hay indicadores definidos</p>
+            <button onclick="mostrarModalIndicador()" class="btn-primary mt-4 text-sm">Crear Primer Indicador</button>
+        </div>`;
+        return;
+    }
+
+    let html = '';
+    for (const ind of indicadores) {
+        const registros = await apiRequest('GET', `/indicadores/${ind.id}/registros`);
+        const ultimoValor = registros.length > 0 ? registros[0].valor : '—';
+        const cumplimiento = ind.meta ? (registros.length > 0 ? Math.round((registros[0].valor / ind.meta) * 100) : 0) : 0;
+
+        html += `
+        <div class="card fade-in">
+            <div class="flex items-start justify-between mb-3">
+                <div>
+                    <h4 class="font-bold text-slate-900">${ind.nombre}</h4>
+                    <p class="text-xs text-slate-500">${ind.descripcion || ''}</p>
+                </div>
+                <span class="badge bg-blue-100 text-blue-800">${ind.periodo}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-4 mb-3 text-center">
+                <div>
+                    <p class="text-2xl font-bold text-blue-600">${ultimoValor}</p>
+                    <p class="text-xs text-slate-500">Último valor</p>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-600">${ind.meta || '—'}</p>
+                    <p class="text-xs text-slate-500">Meta</p>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold ${cumplimiento >= 100 ? 'text-green-600' : 'text-yellow-600'}">${cumplimiento}%</p>
+                    <p class="text-xs text-slate-500">Cumplimiento</p>
+                </div>
+            </div>
+            <div class="progress-bar mb-3">
+                <div class="progress-fill" style="width:${Math.min(cumplimiento, 100)}%"></div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="mostrarModalRegistroIndicador(${ind.id}, '${ind.nombre}')" class="btn-primary text-xs py-2">
+                    <i class="fas fa-plus mr-1"></i> Registrar Valor
+                </button>
+                <button onclick="verHistorialIndicador(${ind.id}, '${ind.nombre}')" class="btn-secondary text-xs py-2">
+                    <i class="fas fa-history mr-1"></i> Historial
+                </button>
+            </div>
+            <div id="historial-${ind.id}" class="mt-3 hidden"></div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+function mostrarModalIndicador() { $('modal-indicador').classList.remove('hidden'); }
+
+document.getElementById('form-indicador').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await apiRequest('POST', '/indicadores', {
+        nombre: $('ind-nombre').value,
+        descripcion: $('ind-descripcion').value,
+        formula: $('ind-formula').value,
+        meta: parseFloat($('ind-meta').value) || null,
+        periodo: $('ind-periodo').value
+    });
+    cerrarModal('modal-indicador');
+    e.target.reset();
+    cargarIndicadores();
+});
+
+function mostrarModalRegistroIndicador(id, nombre) {
+    $('reg-indicador-id').value = id;
+    $('modal-registro-titulo').textContent = `Registrar Valor: ${nombre}`;
+    $('reg-fecha').value = new Date().toISOString().split('T')[0];
+    $('reg-valor').value = '';
+    $('reg-observaciones').value = '';
+    $('modal-registro-indicador').classList.remove('hidden');
+}
+
+document.getElementById('form-registro-indicador').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = $('reg-indicador-id').value;
+    await apiRequest('POST', `/indicadores/${id}/registros`, {
+        valor: parseFloat($('reg-valor').value),
+        fecha: $('reg-fecha').value,
+        observaciones: $('reg-observaciones').value
+    });
+    cerrarModal('modal-registro-indicador');
+    cargarIndicadores();
+});
+
+async function verHistorialIndicador(id, nombre) {
+    const div = $(`historial-${id}`);
+    if (!div.classList.contains('hidden')) { div.classList.add('hidden'); return; }
+    div.classList.remove('hidden');
+    div.innerHTML = '<div class="spinner mx-auto"></div>';
+
+    const registros = await apiRequest('GET', `/indicadores/${id}/registros`);
+    if (!registros.length) { div.innerHTML = '<p class="text-sm text-slate-500 text-center">Sin registros</p>'; return; }
+
+    let html = '<div class="space-y-2 mt-2">';
+    for (const r of registros) {
+        html += `
+        <div class="flex justify-between items-center p-2 bg-slate-50 rounded text-sm">
+            <span class="font-semibold">${r.valor}</span>
+            <span class="text-slate-500">${new Date(r.fecha).toLocaleDateString('es-CO')}</span>
+            <span class="text-xs text-slate-400">${r.observaciones || ''}</span>
+        </div>`;
+    }
+    html += '</div>';
+    div.innerHTML = html;
+}
+
+// ============ ACCIONES DE MEJORA ============
+async function cargarAcciones() {
+    const container = $('acciones-content');
+    container.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+
+    const acciones = await apiRequest('GET', '/acciones');
+    if (!Array.isArray(acciones)) { container.innerHTML = '<p class="text-red-500">Error al cargar acciones</p>'; return; }
+
+    if (acciones.length === 0) {
+        container.innerHTML = `
+        <div class="card text-center py-12">
+            <i class="fas fa-arrows-rotate text-4xl text-slate-300 mb-4"></i>
+            <p class="text-slate-500">No hay acciones de mejora registradas</p>
+        </div>`;
+        return;
+    }
+
+    let html = '<div class="space-y-3">';
+    for (const acc of acciones) {
+        const estadoBadge = {
+            'abierta': '<span class="badge bg-red-100 text-red-800">Abierta</span>',
+            'en_proceso': '<span class="badge bg-yellow-100 text-yellow-800">En Proceso</span>',
+            'cerrada': '<span class="badge bg-green-100 text-green-800">Cerrada</span>'
+        }[acc.estado] || acc.estado;
+
+        html += `
+        <div class="card flex items-start justify-between">
+            <div class="flex-grow">
+                <div class="flex items-center gap-2 mb-1">
+                    <h4 class="font-bold text-slate-900">${acc.descripcion}</h4>
+                    ${estadoBadge}
+                </div>
+                <p class="text-sm text-slate-500">Origen: ${acc.origen || 'No especificado'} | Responsable: ${acc.responsable || 'N/A'}</p>
+                <p class="text-xs text-slate-400">Compromiso: ${acc.fecha_compromiso ? new Date(acc.fecha_compromiso).toLocaleDateString('es-CO') : 'Sin fecha'}</p>
+            </div>
+            <select onchange="cambiarEstadoAccion(${acc.id}, this.value)" class="text-sm border rounded p-1 ml-4">
+                <option value="abierta" ${acc.estado === 'abierta' ? 'selected' : ''}>Abierta</option>
+                <option value="en_proceso" ${acc.estado === 'en_proceso' ? 'selected' : ''}>En Proceso</option>
+                <option value="cerrada" ${acc.estado === 'cerrada' ? 'selected' : ''}>Cerrada</option>
+            </select>
+        </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+async function cambiarEstadoAccion(id, estado) {
+    await apiRequest('PUT', `/acciones/${id}`, { estado });
+    cargarAcciones();
+}
+
+function mostrarModalAccion() { $('modal-accion').classList.remove('hidden'); }
+
+document.getElementById('form-accion').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await apiRequest('POST', '/acciones', {
+        origen: $('acc-origen').value,
+        descripcion: $('acc-descripcion').value,
+        responsable: $('acc-responsable').value,
+        fecha_compromiso: $('acc-fecha').value
+    });
+    cerrarModal('modal-accion');
+    e.target.reset();
+    cargarAcciones();
+});
+
+// ============ AUDITORÍAS ============
+async function cargarAuditorias() {
+    const container = $('auditorias-content');
+    container.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+
+    const auditorias = await apiRequest('GET', '/auditorias');
+    if (!Array.isArray(auditorias)) { container.innerHTML = '<p class="text-red-500">Error al cargar auditorías</p>'; return; }
+
+    if (auditorias.length === 0) {
+        container.innerHTML = `
+        <div class="card text-center py-12">
+            <i class="fas fa-clipboard-check text-4xl text-slate-300 mb-4"></i>
+            <p class="text-slate-500">No hay auditorías registradas</p>
+        </div>`;
+        return;
+    }
+
+    let html = '<div class="space-y-3">';
+    for (const aud of auditorias) {
+        html += `
+        <div class="card">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="badge ${aud.tipo === 'interna' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">${aud.tipo === 'interna' ? 'Interna' : 'Externa'}</span>
+                    <h4 class="font-bold text-slate-900">${new Date(aud.fecha).toLocaleDateString('es-CO')}</h4>
+                </div>
+                <span class="text-sm text-slate-500">Auditor: ${aud.auditor || 'N/A'}</span>
+            </div>
+            ${aud.hallazgos ? `<p class="text-sm text-slate-600 mb-1"><strong>Hallazgos:</strong> ${aud.hallazgos}</p>` : ''}
+            ${aud.resultado ? `<p class="text-sm text-slate-600"><strong>Resultado:</strong> ${aud.resultado}</p>` : ''}
+        </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function mostrarModalAuditoria() { $('modal-auditoria').classList.remove('hidden'); }
+
+document.getElementById('form-auditoria').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await apiRequest('POST', '/auditorias', {
+        tipo: $('aud-tipo').value,
+        fecha: $('aud-fecha').value,
+        auditor: $('aud-auditor').value,
+        hallazgos: $('aud-hallazgos').value,
+        resultado: $('aud-resultado').value
+    });
+    cerrarModal('modal-auditoria');
+    e.target.reset();
+    cargarAuditorias();
+});
+
+// ============ USUARIOS ============
+async function cargarUsuarios() {
+    const container = $('usuarios-content');
+    container.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+
+    const usuarios = await apiRequest('GET', '/empresas/usuarios');
+    if (!Array.isArray(usuarios)) { container.innerHTML = '<p class="text-red-500">Error al cargar usuarios</p>'; return; }
+
+    let html = `<div class="card"><div class="overflow-x-auto"><table class="w-full text-sm">
+        <thead><tr class="text-left text-slate-500 border-b">
+            <th class="pb-3 font-semibold">Nombre</th>
+            <th class="pb-3 font-semibold">Email</th>
+            <th class="pb-3 font-semibold">Rol</th>
+            <th class="pb-3 font-semibold">Estado</th>
+        </tr></thead><tbody>`;
+
+    for (const u of usuarios) {
+        html += `
+        <tr class="border-b border-slate-100">
+            <td class="py-3 font-semibold">${u.nombre}</td>
+            <td class="py-3 text-slate-600">${u.email}</td>
+            <td class="py-3"><span class="badge bg-slate-100 text-slate-700">${u.rol}</span></td>
+            <td class="py-3">${u.activo ? '<span class="text-green-600 font-semibold">Activo</span>' : '<span class="text-red-600 font-semibold">Inactivo</span>'}</td>
+        </tr>`;
+    }
+
+    html += `</tbody></table></div></div>`;
+    container.innerHTML = html;
+}
+
+function mostrarModalUsuario() { $('modal-usuario').classList.remove('hidden'); }
+
+document.getElementById('form-usuario').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await apiRequest('POST', '/empresas/usuarios', {
+        nombre: $('user-nombre').value,
+        email: $('user-email').value,
+        password: $('user-password').value,
+        rol: $('user-rol').value
+    });
+    if (res.mensaje) {
+        cerrarModal('modal-usuario');
+        e.target.reset();
+        cargarUsuarios();
+    } else {
+        alert(res.error || 'Error al crear usuario');
+    }
+});
+
+// ============ CONFIGURACIÓN ============
+async function cargarConfiguracion() {
+    const container = $('configuracion-content');
+    container.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+
+    const empresa = await apiRequest('GET', '/empresas/mi-empresa');
+    if (!empresa) { container.innerHTML = '<p class="text-red-500">Error al cargar configuración</p>'; return; }
+
+    container.innerHTML = `
+    <div class="card">
+        <h3 class="font-bold text-lg mb-4">Datos de la Empresa</h3>
+        <form id="form-config" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre</label>
+                    <input type="text" id="cfg-nombre" class="input-field" value="${empresa.nombre || ''}">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">NIT</label>
+                    <input type="text" id="cfg-nit" class="input-field" value="${empresa.nit || ''}">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Dirección</label>
+                    <input type="text" id="cfg-direccion" class="input-field" value="${empresa.direccion || ''}">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Teléfono</label>
+                    <input type="text" id="cfg-telefono" class="input-field" value="${empresa.telefono || ''}">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Email de Contacto</label>
+                    <input type="email" id="cfg-email" class="input-field" value="${empresa.email_contacto || ''}">
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="btn-primary">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>`;
+
+    document.getElementById('form-config').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const res = await apiRequest('PUT', '/empresas/mi-empresa', {
+            nombre: $('cfg-nombre').value,
+            nit: $('cfg-nit').value,
+            direccion: $('cfg-direccion').value,
+            telefono: $('cfg-telefono').value,
+            email_contacto: $('cfg-email').value
+        });
+        if (res.mensaje) alert('Datos actualizados exitosamente');
+    });
+}
+
+// ============ REPORTES ============
+async function generarPDF() {
+    try {
+        const res = await fetch(`${API}/reportes/pdf`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Error al generar PDF');
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `PESV_${usuarioActual.empresa_nombre.replace(/\s+/g, '_')}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        alert('Error al generar PDF: ' + err.message);
+    }
+}
+
+async function verAvance() {
+    const container = $('reporte-avance');
+    if (!container.classList.contains('hidden')) { container.classList.add('hidden'); return; }
+    container.classList.remove('hidden');
+    container.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
+
+    const data = await apiRequest('GET', '/reportes/avance');
+    if (!data.detalle_fases) { container.innerHTML = '<p class="text-red-500">Error al cargar reporte</p>'; return; }
+
+    let html = `
+    <div class="card mt-4">
+        <h3 class="font-bold text-lg mb-4">Reporte de Avance del PESV</h3>
+        <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+            <div class="p-4 bg-blue-50 rounded-lg">
+                <p class="text-3xl font-bold text-blue-600">${data.total_pasos}</p>
+                <p class="text-sm text-slate-600">Total Pasos</p>
+            </div>
+            <div class="p-4 bg-green-50 rounded-lg">
+                <p class="text-3xl font-bold text-green-600">${data.pasos_con_evidencia}</p>
+                <p class="text-sm text-slate-600">Completados</p>
+            </div>
+            <div class="p-4 bg-purple-50 rounded-lg">
+                <p class="text-3xl font-bold text-purple-600">${data.porcentaje_global}%</p>
+                <p class="text-sm text-slate-600">Avance Global</p>
+            </div>
+        </div>
+        <div class="space-y-4">`;
+
+    for (const fase of data.detalle_fases) {
+        html += `
+        <div>
+            <div class="flex justify-between text-sm mb-1">
+                <span class="font-semibold">${fase.nombre}</span>
+                <span>${fase.pasos_completados}/${fase.total_pasos} (${fase.porcentaje}%)</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:${fase.porcentaje}%"></div>
+            </div>
+        </div>`;
+    }
+
+    html += `</div></div>`;
+    container.innerHTML = html;
+}
+
+// ============ INICIALIZACIÓN ============
+(async function init() {
+    if (token) {
+        const res = await apiRequest('GET', '/auth/perfil');
+        if (res.id) {
+            usuarioActual = res;
+            localStorage.setItem('pesv_usuario', JSON.stringify(usuarioActual));
+            iniciarApp();
+            return;
+        }
+        // Token inválido
+        localStorage.removeItem('pesv_token');
+        localStorage.removeItem('pesv_usuario');
+    }
+    $('loading-screen').classList.add('hidden');
+    $('login-screen').classList.remove('hidden');
+})();
+</script>
+</body>
+</html>

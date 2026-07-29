@@ -1,0 +1,19 @@
+{
+  "name": "pesv-integral-saas",
+  "version": "1.0.0",
+  "description": "Sistema SAAS para Plan Estratégico de Seguridad Vial - Resolución 40595 de 2022",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.4",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.23.2",
+    "pdfkit": "^0.13.0"
+  }
+}

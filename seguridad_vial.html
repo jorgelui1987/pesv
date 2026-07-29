@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PESV - Cumplimiento Res. 40595 de 2022</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .nav-active { background-color: #1e293b; border-left: 4px solid #3b82f6; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-50 flex min-h-screen">
+
+    <aside class="w-80 bg-slate-900 text-slate-300 p-6 flex flex-col shadow-2xl">
+        <h2 class="text-white text-xl font-bold mb-6">PESV Integral</h2>
+        <nav class="space-y-1">
+            <button onclick="mostrarFase('fase1', this)" class="w-full text-left p-3 rounded hover:bg-slate-800 text-sm font-semibold transition">Fase 1: Planificación (PHVA)</button>
+            <button onclick="mostrarFase('fase2', this)" class="w-full text-left p-3 rounded hover:bg-slate-800 text-sm font-semibold transition">Fase 2: Implementación</button>
+            <button onclick="mostrarFase('fase3', this)" class="w-full text-left p-3 rounded hover:bg-slate-800 text-sm font-semibold transition">Fase 3: Seguimiento</button>
+            <button onclick="mostrarFase('fase4', this)" class="w-full text-left p-3 rounded hover:bg-slate-800 text-sm font-semibold transition">Fase 4: Mejora Continua</button>
+        </nav>
+    </aside>
+
+    <main class="flex-grow p-10">
+        <header class="mb-8">
+            <h1 id="titulo-fase" class="text-3xl font-bold text-slate-900">Seleccione una Fase</h1>
+            <p class="text-slate-600 mt-2">Metodología según Resolución 40595 de 2022</p>
+        </header>
+
+        <div id="contenedor-principal" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Contenido dinámico -->
+        </div>
+    </main>
+
+    <!-- Modal para implementar -->
+    <div id="modal-implementacion" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-8 w-full max-w-lg shadow-xl">
+            <h3 id="modal-titulo" class="text-xl font-bold mb-4">Implementar Paso</h3>
+            <form onsubmit="guardarImplementacion(event)">
+                <input type="hidden" id="paso-id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700">Responsable</label>
+                        <input type="text" class="w-full border p-2 rounded" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700">Estado de Evidencia</label>
+                        <select class="w-full border p-2 rounded">
+                            <option>Pendiente</option>
+                            <option>En Proceso</option>
+                            <option>Finalizado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700">Enlace o Ruta de Archivo</label>
+                        <input type="text" placeholder="Ej: C:/Documentos/evidencia.pdf" class="w-full border p-2 rounded">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" onclick="cerrarModal()" class="px-4 py-2 bg-slate-200 rounded">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const pesvData = {
+            fase1: { titulo: "Fase 1: Planificación (PHVA)", pasos: ["Paso 1: Líder PESV", "Paso 2: Comité Seguridad Vial", "Paso 3: Política de Seguridad", "Paso 4: Liderazgo Directivo", "Paso 5: Diagnóstico Línea Base", "Paso 6: Gestión de Riesgos"] },
+            fase2: { titulo: "Fase 2: Implementación y Ejecución", pasos: ["Paso 9: Plan Anual de Trabajo", "Paso 10: Plan Anual de Formación", "Paso 16: Inspección Vehículos", "Paso 17: Mantenimiento Preventivo"] },
+            fase3: { titulo: "Fase 3: Seguimiento", pasos: ["Paso 20: Indicadores de Gestión", "Paso 21: Análisis de Siniestros", "Paso 22: Auditoría Anual"] },
+            fase4: { titulo: "Fase 4: Mejora Continua", pasos: ["Paso 23: Acciones Correctivas", "Paso 24: Comunicación y Participación"] }
+        };
+
+        function mostrarFase(id, btn) {
+            const data = pesvData[id];
+            document.getElementById('titulo-fase').innerText = data.titulo;
+            let container = document.getElementById('contenedor-principal');
+            let html = "";
+            data.pasos.forEach((paso, index) => {
+                html += `<div class="bg-white p-6 rounded-lg shadow border border-slate-200">
+                        <h4 class="text-blue-600 font-bold text-sm uppercase">${paso}</h4>
+                        <button onclick="abrirModal('${paso}')" class="mt-4 text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded font-bold uppercase text-slate-600 transition">Gestionar Evidencia</button>
+                    </div>`;
+            });
+            container.innerHTML = html;
+            document.querySelectorAll('aside button').forEach(b => b.classList.remove('nav-active'));
+            btn.classList.add('nav-active');
+        }
+
+        function abrirModal(paso) {
+            document.getElementById('modal-titulo').innerText = "Implementar: " + paso;
+            document.getElementById('modal-implementacion').classList.remove('hidden');
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-implementacion').classList.add('hidden');
+        }
+
+        function guardarImplementacion(e) {
+            e.preventDefault();
+            alert("Evidencia guardada exitosamente en el sistema.");
+            cerrarModal();
+        }
+    </script>
+</body>
+</html>
