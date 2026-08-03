@@ -1,23 +1,50 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-const DB_CONFIG = {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USERNAME || process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_DATABASE || process.env.DB_NAME || 'pesv_integral',
-    port: process.env.DB_PORT || 5432,
-    max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
-};
+function getDBConfig() {
+    const config = {
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000
+    };
+
+    // Soporte para DATABASE_URL estándar (Railway, Docploy, Heroku, etc.)
+    if (process.env.DATABASE_URL) {
+        const parsed = new URL(process.env.DATABASE_URL);
+        config.host = parsed.hostname;
+        config.port = parseInt(parsed.port, 10) || 5432;
+        config.user = decodeURIComponent(parsed.username);
+        config.password = decodeURIComponent(parsed.password);
+        config.database = parsed.pathname.replace(/^\//, '');
+        config.ssl = { rejectUnauthorized: false };
+        return config;
+    }
+
+    config.host = process.env.DB_HOST || 'localhost';
+    config.user = process.env.DB_USERNAME || process.env.DB_USER || 'postgres';
+    config.password = process.env.DB_PASSWORD || '';
+    config.database = process.env.DB_DATABASE || process.env.DB_NAME || 'pesv_integral';
+    config.port = parseInt(process.env.DB_PORT, 10) || 5432;
+
+    // Activar SSL si se indica o si el host no es localhost (proveedores cloud)
+    const requiereSSL = process.env.DB_SSL === 'true' || (config.host !== 'localhost' && config.host !== '127.0.0.1');
+    if (requiereSSL) {
+        config.ssl = { rejectUnauthorized: false };
+    }
+
+    return config;
+}
+
+const DB_CONFIG = getDBConfig();
 
 let pool = null;
 
 async function getPool() {
     if (!pool) {
         pool = new Pool(DB_CONFIG);
+        pool.on('error', (err) => {
+            console.error('Error inesperado en el pool de PostgreSQL:', err.message);
+        });
         await createTables();
         await seedData();
     }
