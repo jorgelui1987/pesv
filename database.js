@@ -289,19 +289,36 @@ async function seedData() {
     try {
         const result = await client.query('SELECT COUNT(*) as c FROM empresas');
         if (parseInt(result.rows[0].c) > 0) {
-            // Actualizar credenciales del super admin existente
+            // Migración del super admin:
+            // Cambiar el correo personal (jesuscastrosg@gmail.com) por el correo
+            // genérico admin@pesv.com, manteniendo la contraseña Castro161219@.
             const hash = bcrypt.hashSync('Castro161219@', 10);
-            await client.query(
-                'UPDATE usuarios SET email = $1, password = $2 WHERE rol = $3 AND email = $4',
-                ['admin@pesv.com', hash, 'admin', 'admin@pesv.com']
+
+            // 1. Buscar si existe el usuario con el correo personal
+            const personalAdmin = await client.query(
+                'SELECT id FROM usuarios WHERE email = $1',
+                ['jesuscastrosg@gmail.com']
             );
 
-            // Migración: renombrar el admin demo que usaba un correo personal
-            // (jesuscastrosg@gmail.com) al correo genérico admin@pesv.com
-            await client.query(
-                'UPDATE usuarios SET email = $1 WHERE rol = $2 AND email = $3',
-                ['admin@pesv.com', 'admin', 'jesuscastrosg@gmail.com']
-            );
+            if (personalAdmin.rows.length > 0) {
+                // 2. Eliminar cualquier admin@pesv.com duplicado (evita violar UNIQUE)
+                await client.query(
+                    'DELETE FROM usuarios WHERE email = $1 AND id != $2',
+                    ['admin@pesv.com', personalAdmin.rows[0].id]
+                );
+                // 3. Renombrar el correo personal a admin@pesv.com y fijar contraseña
+                await client.query(
+                    'UPDATE usuarios SET email = $1, password = $2 WHERE id = $3',
+                    ['admin@pesv.com', hash, personalAdmin.rows[0].id]
+                );
+            } else {
+                // 4. Si no existe el correo personal, asegurar que admin@pesv.com
+                //    tenga la contraseña correcta
+                await client.query(
+                    'UPDATE usuarios SET password = $1 WHERE email = $2 AND rol = $3',
+                    [hash, 'admin@pesv.com', 'admin']
+                );
+            }
             return;
         }
 
