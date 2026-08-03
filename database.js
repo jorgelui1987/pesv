@@ -1,6 +1,40 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
+// Mensajes de error típicos cuando el servidor PostgreSQL no soporta SSL
+const SSL_ERROR_MESSAGES = [
+    'The server does not support SSL connections',
+    'no pg_hba.conf entry',
+    'SSL connection is required'
+];
+
+// Determina la configuración SSL de forma segura.
+// Prioridad: DB_SSL explícito > PGSSLMODE estándar > sin SSL por defecto.
+// Esto evita el error "The server does not support SSL connections"
+// cuando el proveedor de BD no soporta SSL.
+function getSSLConfig() {
+    // 1. Configuración explícita con DB_SSL
+    if (process.env.DB_SSL !== undefined && process.env.DB_SSL !== '') {
+        const val = process.env.DB_SSL.toLowerCase();
+        if (val === 'true' || val === '1' || val === 'require' || val === 'required') {
+            return { rejectUnauthorized: false };
+        }
+        return undefined; // SSL desactivado explícitamente
+    }
+
+    // 2. PGSSLMODE estándar de PostgreSQL
+    if (process.env.PGSSLMODE) {
+        const mode = process.env.PGSSLMODE.toLowerCase();
+        if (['require', 'verify-ca', 'verify-full', 'no-verify', 'prefer'].includes(mode)) {
+            return { rejectUnauthorized: false };
+        }
+        return undefined;
+    }
+
+    // 3. Por defecto: SIN SSL (compatible con PostgreSQL local y proveedores sin SSL)
+    return undefined;
+}
+
 function getDBConfig() {
     const config = {
         max: 10,
@@ -16,7 +50,17 @@ function getDBConfig() {
         config.user = decodeURIComponent(parsed.username);
         config.password = decodeURIComponent(parsed.password);
         config.database = parsed.pathname.replace(/^\//, '');
-        config.ssl = { rejectUnauthorized: false };
+
+        // Respetar ?sslmode=... si viene en la URL
+        const sslModeParam = parsed.searchParams.get('sslmode');
+        if (sslModeParam) {
+            const mode = sslModeParam.toLowerCase();
+            if (['require', 'verify-ca', 'verify-full', 'no-verify', 'prefer'].includes(mode)) {
+                config.ssl = { rejectUnauthorized: false };
+            }
+        } else {
+            config.ssl = getSSLConfig();
+        }
         return config;
     }
 
@@ -26,27 +70,47 @@ function getDBConfig() {
     config.database = process.env.DB_DATABASE || process.env.DB_NAME || 'pesv_integral';
     config.port = parseInt(process.env.DB_PORT, 10) || 5432;
 
-    // Activar SSL si se indica o si el host no es localhost (proveedores cloud)
-    const requiereSSL = process.env.DB_SSL === 'true' || (config.host !== 'localhost' && config.host !== '127.0.0.1');
-    if (requiereSSL) {
-        config.ssl = { rejectUnauthorized: false };
-    }
+    config.ssl = getSSLConfig();
 
     return config;
 }
 
 const DB_CONFIG = getDBConfig();
 
+// Log de diagnóstico (sin exponer la contraseña)
+console.log(`🔌 Config PostgreSQL → host: ${DB_CONFIG.host}, db: ${DB_CONFIG.database}, user: ${DB_CONFIG.user}, ssl: ${DB_CONFIG.ssl ? 'activado' : 'desactivado'}`);
+
 let pool = null;
 
+// Si el servidor no soporta SSL pero teníamos SSL activado, reintenta sin SSL.
+// Esto cubre proveedores que inyectan DATABASE_URL con ?sslmode=require
+// pero cuyo PostgreSQL no soporta conexiones SSL.
 async function getPool() {
     if (!pool) {
         pool = new Pool(DB_CONFIG);
         pool.on('error', (err) => {
             console.error('Error inesperado en el pool de PostgreSQL:', err.message);
         });
-        await createTables();
-        await seedData();
+
+        try {
+            await createTables();
+            await seedData();
+        } catch (err) {
+            const isSslError = SSL_ERROR_MESSAGES.some(msg => err.message && err.message.includes(msg));
+
+            if (isSslError && DB_CONFIG.ssl) {
+                console.warn('⚠️  El servidor no soporta SSL. Reintentando sin SSL...');
+                DB_CONFIG.ssl = undefined;
+                pool = new Pool(DB_CONFIG);
+                pool.on('error', (err) => {
+                    console.error('Error inesperado en el pool de PostgreSQL:', err.message);
+                });
+                await createTables();
+                await seedData();
+            } else {
+                throw err;
+            }
+        }
     }
     return pool;
 }
