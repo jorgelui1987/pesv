@@ -82,15 +82,28 @@ console.log(`🔌 Config PostgreSQL → host: ${DB_CONFIG.host}, db: ${DB_CONFIG
 
 let pool = null;
 
+// Configura los manejadores de eventos del pool.
+// En entornos gestionados (Docploy, Railway, Heroku, etc.) el proveedor puede
+// cerrar conexiones por mantenimiento o timeout ("terminating connection due to
+// administrator command"). El pool de pg los detecta y reconecta automáticamente,
+// por lo que se muestra como aviso y no como error fatal.
+function setupPoolHandlers(pool) {
+    pool.on('error', (err) => {
+        if (err.message && err.message.includes('terminating connection')) {
+            console.warn('🔄 PostgreSQL cerró una conexión (mantenimiento/reinicio del proveedor). El pool reconectará automáticamente.');
+        } else {
+            console.error('Error inesperado en el pool de PostgreSQL:', err.message);
+        }
+    });
+    return pool;
+}
+
 // Si el servidor no soporta SSL pero teníamos SSL activado, reintenta sin SSL.
 // Esto cubre proveedores que inyectan DATABASE_URL con ?sslmode=require
 // pero cuyo PostgreSQL no soporta conexiones SSL.
 async function getPool() {
     if (!pool) {
-        pool = new Pool(DB_CONFIG);
-        pool.on('error', (err) => {
-            console.error('Error inesperado en el pool de PostgreSQL:', err.message);
-        });
+        pool = setupPoolHandlers(new Pool(DB_CONFIG));
 
         try {
             await createTables();
@@ -101,10 +114,7 @@ async function getPool() {
             if (isSslError && DB_CONFIG.ssl) {
                 console.warn('⚠️  El servidor no soporta SSL. Reintentando sin SSL...');
                 DB_CONFIG.ssl = undefined;
-                pool = new Pool(DB_CONFIG);
-                pool.on('error', (err) => {
-                    console.error('Error inesperado en el pool de PostgreSQL:', err.message);
-                });
+                pool = setupPoolHandlers(new Pool(DB_CONFIG));
                 await createTables();
                 await seedData();
             } else {
