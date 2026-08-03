@@ -35,4 +35,39 @@ router.post('/usuarios', verificarToken, verificarRol('admin'), async (req, res)
     res.status(201).json({ mensaje: 'Usuario creado' });
 });
 
+// DELETE /api/empresas/usuarios/:id - Eliminar un usuario de la propia empresa
+router.delete('/usuarios/:id', verificarToken, verificarRol('admin'), async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id, 10);
+
+        // 1. Verificar que el usuario existe y pertenece a la misma empresa
+        const usuario = await queryGet(
+            'SELECT id, email FROM usuarios WHERE id = $1 AND empresa_id = $2',
+            [userId, req.usuario.empresa_id]
+        );
+
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        // 2. No permitir eliminarse a sí mismo (evita dejar la empresa sin admin)
+        if (userId === req.usuario.id) {
+            return res.status(400).json({ error: 'No puedes eliminarte a ti mismo' });
+        }
+
+        // 3. Proteger al super admin global
+        const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'jesuscastrosg@gmail.com';
+        if (usuario.email === SUPER_ADMIN_EMAIL) {
+            return res.status(403).json({ error: 'No se puede eliminar la cuenta de super administrador' });
+        }
+
+        // 4. Eliminar el usuario
+        await queryRun('DELETE FROM usuarios WHERE id = $1', [userId]);
+        res.json({ mensaje: 'Usuario eliminado' });
+    } catch (err) {
+        console.error('Error al eliminar usuario:', err);
+        res.status(500).json({ error: 'Error al eliminar usuario' });
+    }
+});
+
 module.exports = router;

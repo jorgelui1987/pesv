@@ -374,9 +374,30 @@ async function cargarUsuarios() {
     const c = $('usuarios-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
     const us = await apiRequest('GET', '/empresas/usuarios');
     if (!Array.isArray(us)) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
-    let h = '<div class="card"><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-500 border-b"><th class="pb-3 font-semibold">Nombre</th><th class="pb-3 font-semibold">Email</th><th class="pb-3 font-semibold">Rol</th><th class="pb-3 font-semibold">Estado</th></tr></thead><tbody>';
-    for (const u of us) h += `<tr class="border-b border-slate-100"><td class="py-3 font-semibold">${u.nombre}</td><td class="py-3 text-slate-600">${u.email}</td><td class="py-3"><span class="badge bg-slate-100 text-slate-700">${u.rol}</span></td><td class="py-3">${u.activo ? '<span class="text-green-600 font-semibold">Activo</span>' : '<span class="text-red-600 font-semibold">Inactivo</span>'}</td></tr>`;
+    let h = '<div class="card"><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-500 border-b"><th class="pb-3 font-semibold">Nombre</th><th class="pb-3 font-semibold">Email</th><th class="pb-3 font-semibold">Rol</th><th class="pb-3 font-semibold">Estado</th><th class="pb-3 font-semibold">Acciones</th></tr></thead><tbody>';
+    for (const u of us) {
+        const esActual = u.id === usuarioActual.id;
+        const esSuperAdmin = u.email === 'jesuscastrosg@gmail.com';
+        let acciones = '';
+        if (usuarioActual.rol === 'admin' && !esActual && !esSuperAdmin) {
+            acciones = `<button onclick="eliminarUsuario(${u.id}, '${u.nombre.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800" title="Eliminar usuario"><i class="fas fa-trash"></i></button>`;
+        } else if (esActual) {
+            acciones = '<span class="text-xs text-slate-400">Tú</span>';
+        }
+        h += `<tr class="border-b border-slate-100"><td class="py-3 font-semibold">${u.nombre}</td><td class="py-3 text-slate-600">${u.email}</td><td class="py-3"><span class="badge bg-slate-100 text-slate-700">${u.rol}</span></td><td class="py-3">${u.activo ? '<span class="text-green-600 font-semibold">Activo</span>' : '<span class="text-red-600 font-semibold">Inactivo</span>'}</td><td class="py-3">${acciones}</td></tr>`;
+    }
     c.innerHTML = h + '</tbody></table></div></div>';
+}
+
+async function eliminarUsuario(id, nombre) {
+    if (!confirm(`¿Está seguro de eliminar al usuario "${nombre}"? Esta acción no se puede deshacer.`)) return;
+    const res = await apiRequest('DELETE', `/empresas/usuarios/${id}`);
+    if (res.mensaje) {
+        alert('Usuario eliminado correctamente');
+        cargarUsuarios();
+    } else {
+        alert(res.error || 'Error al eliminar usuario');
+    }
 }
 function mostrarModalUsuario() { $('modal-usuario').classList.remove('hidden'); }
 document.getElementById('form-usuario').addEventListener('submit', async (e) => { e.preventDefault(); const res = await apiRequest('POST', '/empresas/usuarios', { nombre: $('user-nombre').value, email: $('user-email').value, password: $('user-password').value, rol: $('user-rol').value }); if (res.mensaje) { cerrarModal('modal-usuario'); e.target.reset(); cargarUsuarios(); } else alert(res.error || 'Error'); });
