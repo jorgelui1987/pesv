@@ -405,8 +405,23 @@ async function cargarConfiguracion() {
     const c = $('configuracion-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
     const e = await apiRequest('GET', '/empresas/mi-empresa');
     if (!e) { c.innerHTML = '<p class="text-red-500">Error</p>'; return; }
-    c.innerHTML = `<div class="card"><h3 class="font-bold text-lg mb-4">Datos de la Empresa</h3><form id="form-config" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-700 mb-1">Nombre</label><input type="text" id="cfg-nombre" class="input-field" value="${e.nombre || ''}"></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">NIT</label><input type="text" id="cfg-nit" class="input-field" value="${e.nit || ''}"></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">Dirección</label><input type="text" id="cfg-direccion" class="input-field" value="${e.direccion || ''}"></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">Teléfono</label><input type="text" id="cfg-telefono" class="input-field" value="${e.telefono || ''}"></div><div class="md:col-span-2"><label class="block text-sm font-semibold text-slate-700 mb-1">Email Contacto</label><input type="email" id="cfg-email" class="input-field" value="${e.email_contacto || ''}"></div></div><div class="flex justify-end"><button type="submit" class="btn-primary">Guardar</button></div></form></div>`;
+    c.innerHTML = `<div class="card"><h3 class="font-bold text-lg mb-4">Datos de la Empresa</h3><form id="form-config" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-700 mb-1">Nombre</label><input type="text" id="cfg-nombre" class="input-field" value="${e.nombre || ''}"></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">NIT</label><input type="text" id="cfg-nit" class="input-field" value="${e.nit || ''}"></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">Dirección</label><input type="text" id="cfg-direccion" class="input-field" value="${e.direccion || ''}"></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">Teléfono</label><input type="text" id="cfg-telefono" class="input-field" value="${e.telefono || ''}"></div><div class="md:col-span-2"><label class="block text-sm font-semibold text-slate-700 mb-1">Email Contacto</label><input type="email" id="cfg-email" class="input-field" value="${e.email_contacto || ''}"></div></div><div class="flex justify-end"><button type="submit" class="btn-primary">Guardar</button></div></form></div>
+    <div class="card mt-6 border-red-200"><h3 class="font-bold text-lg mb-2 text-red-700">Zona de Riesgo</h3><p class="text-sm text-slate-600 mb-4">Esto eliminará <strong>todos los datos del PESV</strong> de su empresa (evidencias, indicadores, acciones, auditorías, fases y pasos), pero <strong>conservará sus usuarios y cuenta</strong>. Las fases y pasos por defecto serán restablecidos.</p><button onclick="limpiarDatosEmpresa()" class="btn-danger"><i class="fas fa-broom mr-2"></i> Limpiar Datos del PESV</button></div>`;
     document.getElementById('form-config').addEventListener('submit', async (e) => { e.preventDefault(); const r = await apiRequest('PUT', '/empresas/mi-empresa', { nombre: $('cfg-nombre').value, nit: $('cfg-nit').value, direccion: $('cfg-direccion').value, telefono: $('cfg-telefono').value, email_contacto: $('cfg-email').value }); if (r.mensaje) alert('Datos actualizados'); });
+}
+
+async function limpiarDatosEmpresa() {
+    const confirmacion = confirm('¿Está seguro de eliminar TODOS los datos del PESV de su empresa?\n\nSe eliminarán: evidencias, indicadores, acciones de mejora, auditorías, fases y pasos.\nSe conservarán: su empresa y sus usuarios.\n\nEsta acción NO se puede deshacer.');
+    if (!confirmacion) return;
+    const confirmacion2 = confirm('¿Realmente desea continuar? Esta acción eliminará permanentemente todos los datos registrados del PESV.');
+    if (!confirmacion2) return;
+    const res = await apiRequest('POST', '/empresas/limpiar-datos');
+    if (res.mensaje) {
+        alert(res.mensaje);
+        navegar('dashboard');
+    } else {
+        alert(res.error || 'Error al limpiar los datos');
+    }
 }
 async function cargarResoluciones() {
     const c = $('resoluciones-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
