@@ -210,6 +210,19 @@
         </form>
     </div>
 </div>
+<div id="modal-plan" class="modal-overlay hidden">
+    <div class="modal-content fade-in">
+        <div class="flex items-center justify-between mb-6"><h3 class="text-xl font-bold" id="modal-plan-titulo">Nuevo Plan</h3><button onclick="cerrarModal('modal-plan')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button></div>
+        <form id="form-plan" class="space-y-4">
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Nombre del Plan</label><input type="text" id="plan-nombre" class="input-field" required></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Descripción</label><textarea id="plan-descripcion" class="input-field" rows="2"></textarea></div>
+            <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-slate-700 mb-1">Precio ($)</label><input type="number" id="plan-precio" class="input-field" step="0.01" min="0" required></div><div><label class="block text-sm font-semibold text-slate-700 mb-1">Periodo</label><select id="plan-periodo" class="input-field"><option value="mensual">Mensual</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option></select></div></div>
+            <div><label class="block text-sm font-semibold text-slate-700 mb-1">Características (una por línea)</label><textarea id="plan-caracteristicas" class="input-field" rows="4" placeholder="Hasta 10 usuarios&#10;Fases y pasos del PESV&#10;Reportes PDF"></textarea></div>
+            <div class="flex items-center gap-2"><input type="checkbox" id="plan-activo" class="w-4 h-4" checked><label for="plan-activo" class="text-sm font-semibold text-slate-700">Plan activo</label></div>
+            <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="cerrarModal('modal-plan')" class="btn-secondary">Cancelar</button><button type="submit" class="btn-primary">Guardar Plan</button></div>
+        </form>
+    </div>
+</div>
 <div id="modal-registro-indicador" class="modal-overlay hidden">
     <div class="modal-content fade-in">
         <div class="flex items-center justify-between mb-6"><h3 class="text-xl font-bold" id="modal-registro-titulo">Registrar Valor</h3><button onclick="cerrarModal('modal-registro-indicador')" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button></div>
@@ -487,6 +500,7 @@ async function cargarSuperAdmin() {
     const c = $('superadmin-content'); c.innerHTML = '<div class="flex items-center justify-center h-32"><div class="spinner"></div></div>';
     const stats = await apiRequest('GET', '/superadmin/stats');
     const empresas = await apiRequest('GET', '/superadmin/empresas');
+    const planes = await apiRequest('GET', '/superadmin/planes');
     if (!Array.isArray(empresas)) { c.innerHTML = '<p class="text-red-500">Error al cargar</p>'; return; }
     let h = `<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="card text-center"><div class="text-3xl font-bold text-blue-600">${stats.total_empresas || 0}</div><p class="text-sm text-slate-500">Total Empresas</p></div>
@@ -494,6 +508,24 @@ async function cargarSuperAdmin() {
         <div class="card text-center"><div class="text-3xl font-bold text-red-600">${stats.empresas_inactivas || 0}</div><p class="text-sm text-slate-500">Inactivas</p></div>
         <div class="card text-center"><div class="text-3xl font-bold text-purple-600">${stats.total_usuarios || 0}</div><p class="text-sm text-slate-500">Total Usuarios</p></div>
     </div>`;
+
+    // Guardar planes en localStorage para editarPlan
+    localStorage.setItem('pesv_planes', JSON.stringify(planes));
+
+    // Sección de Planes de Precios
+    h += `<div class="card"><div class="flex items-center justify-between mb-4"><h3 class="font-bold text-lg">Planes de Precios</h3><button onclick="mostrarModalPlan()" class="btn-primary text-sm"><i class="fas fa-plus mr-2"></i> Nuevo Plan</button></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-500 border-b"><th class="pb-3 font-semibold">Plan</th><th class="pb-3 font-semibold">Descripción</th><th class="pb-3 font-semibold">Precio</th><th class="pb-3 font-semibold">Periodo</th><th class="pb-3 font-semibold">Estado</th><th class="pb-3 font-semibold">Acciones</th></tr></thead><tbody>`;
+    for (const p of planes) {
+        h += `<tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="py-3 font-semibold">${p.nombre}</td>
+            <td class="py-3 text-slate-600">${p.descripcion || ''}</td>
+            <td class="py-3 font-bold text-blue-600">$${Number(p.precio).toLocaleString('es-CO')}</td>
+            <td class="py-3 text-slate-600">${p.periodo}</td>
+            <td class="py-3">${p.activo ? '<span class="badge bg-green-100 text-green-800">Activo</span>' : '<span class="badge bg-red-100 text-red-800">Inactivo</span>'}</td>
+            <td class="py-3"><button onclick="editarPlan(${p.id})" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button><button onclick="eliminarPlan(${p.id}, '${p.nombre.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+    }
+    h += `</tbody></table></div></div>`;
+
     h += `<div class="card"><h3 class="font-bold text-lg mb-4">Empresas Registradas</h3><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-500 border-b"><th class="pb-3 font-semibold">Empresa</th><th class="pb-3 font-semibold">NIT</th><th class="pb-3 font-semibold">Usuarios</th><th class="pb-3 font-semibold">Evidencias</th><th class="pb-3 font-semibold">Estado</th><th class="pb-3 font-semibold">Acciones</th></tr></thead><tbody>`;
     for (const emp of empresas) {
         const pct = emp.total_pasos > 0 ? Math.round((emp.evidencias_completadas / emp.total_pasos) * 100) : 0;
@@ -509,6 +541,56 @@ async function cargarSuperAdmin() {
     h += `</tbody></table></div></div>`;
     c.innerHTML = h;
 }
+
+// ===== Gestión de Planes de Precios =====
+let planEditandoId = null;
+function mostrarModalPlan() {
+    planEditandoId = null;
+    $('plan-nombre').value = '';
+    $('plan-descripcion').value = '';
+    $('plan-precio').value = '';
+    $('plan-periodo').value = 'mensual';
+    $('plan-caracteristicas').value = '';
+    $('plan-activo').checked = true;
+    $('modal-plan-titulo').textContent = 'Nuevo Plan';
+    $('modal-plan').classList.remove('hidden');
+}
+function editarPlan(id) {
+    const planes = JSON.parse(localStorage.getItem('pesv_planes') || '[]');
+    const p = planes.find(x => x.id === id);
+    if (!p) { alert('No se pudo cargar el plan'); return; }
+    planEditandoId = id;
+    $('plan-nombre').value = p.nombre;
+    $('plan-descripcion').value = p.descripcion || '';
+    $('plan-precio').value = p.precio;
+    $('plan-periodo').value = p.periodo;
+    $('plan-caracteristicas').value = p.caracteristicas || '';
+    $('plan-activo').checked = !!p.activo;
+    $('modal-plan-titulo').textContent = 'Editar Plan';
+    $('modal-plan').classList.remove('hidden');
+}
+async function eliminarPlan(id, nombre) {
+    if (!confirm(`¿Está seguro de eliminar el plan "${nombre}"?`)) return;
+    const res = await apiRequest('DELETE', `/superadmin/planes/${id}`);
+    if (res.mensaje) { alert(res.mensaje); cargarSuperAdmin(); }
+    else alert(res.error || 'Error al eliminar plan');
+}
+document.getElementById('form-plan').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+        nombre: $('plan-nombre').value,
+        descripcion: $('plan-descripcion').value,
+        precio: parseFloat($('plan-precio').value) || 0,
+        periodo: $('plan-periodo').value,
+        caracteristicas: $('plan-caracteristicas').value,
+        activo: $('plan-activo').checked
+    };
+    let res;
+    if (planEditandoId) res = await apiRequest('PUT', `/superadmin/planes/${planEditandoId}`, data);
+    else res = await apiRequest('POST', '/superadmin/planes', data);
+    if (res.mensaje) { cerrarModal('modal-plan'); cargarSuperAdmin(); }
+    else alert(res.error || 'Error al guardar plan');
+});
 async function toggleEmpresa(id, activo) {
     await apiRequest('PUT', `/superadmin/empresas/${id}/estado`, { activo: !activo });
     cargarSuperAdmin();

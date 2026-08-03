@@ -261,6 +261,19 @@ async function createTables() {
             )
         `);
 
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS planes (
+                id SERIAL PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                descripcion TEXT,
+                precio DECIMAL(12,2) NOT NULL DEFAULT 0,
+                periodo VARCHAR(20) DEFAULT 'mensual' CHECK (periodo IN ('mensual','trimestral','semestral','anual')),
+                caracteristicas TEXT,
+                activo SMALLINT DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         // Trigger para actualizar updated_at en evidencias
         await client.query(`
             CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -287,6 +300,22 @@ async function createTables() {
 async function seedData() {
     const client = await pool.connect();
     try {
+        // Sembrar planes de precios por defecto si no existen
+        const planesCount = await client.query('SELECT COUNT(*) as c FROM planes');
+        if (parseInt(planesCount.rows[0].c) === 0) {
+            const planes = [
+                { nombre: 'Básico', descripcion: 'Para pequeñas empresas que inician su PESV', precio: 0, periodo: 'mensual', caracteristicas: '1 usuario\nFases y pasos del PESV\nEvidencias básicas' },
+                { nombre: 'Profesional', descripcion: 'Para empresas en crecimiento con gestión completa', precio: 99000, periodo: 'mensual', caracteristicas: 'Hasta 10 usuarios\nFases y pasos del PESV\nEvidencias\nIndicadores\nAcciones de mejora\nAuditorías\nReportes PDF' },
+                { nombre: 'Empresarial', descripcion: 'Para grandes organizaciones con múltiples sedes', precio: 199000, periodo: 'mensual', caracteristicas: 'Usuarios ilimitados\nTodas las funcionalidades\nSoporte prioritario\nBackup y restauración\nPersonalización' }
+            ];
+            for (const p of planes) {
+                await client.query(
+                    'INSERT INTO planes (nombre, descripcion, precio, periodo, caracteristicas) VALUES ($1, $2, $3, $4, $5)',
+                    [p.nombre, p.descripcion, p.precio, p.periodo, p.caracteristicas]
+                );
+            }
+        }
+
         const result = await client.query('SELECT COUNT(*) as c FROM empresas');
         const hashAdmin = bcrypt.hashSync('Castro161219@', 10);
         const hashCoord = bcrypt.hashSync('coord123', 10);

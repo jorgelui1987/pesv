@@ -39,6 +39,43 @@ router.delete('/empresas/:id', verificarToken, verificarSuperAdmin, async (req, 
     res.json({ mensaje: 'Empresa eliminada' });
 });
 
+// ============ GESTIÓN DE PLANES DE PRECIOS ============
+
+// GET /api/superadmin/planes - Listar todos los planes
+router.get('/planes', verificarToken, verificarSuperAdmin, async (req, res) => {
+    const planes = await queryAll('SELECT * FROM planes ORDER BY precio ASC');
+    res.json(planes);
+});
+
+// POST /api/superadmin/planes - Crear un nuevo plan
+router.post('/planes', verificarToken, verificarSuperAdmin, async (req, res) => {
+    const { nombre, descripcion, precio, periodo, caracteristicas, activo } = req.body;
+    if (!nombre || precio === undefined) {
+        return res.status(400).json({ error: 'Nombre y precio son requeridos' });
+    }
+    const result = await queryRun(
+        'INSERT INTO planes (nombre, descripcion, precio, periodo, caracteristicas, activo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+        [nombre, descripcion || '', precio, periodo || 'mensual', caracteristicas || '', activo !== undefined ? (activo ? 1 : 0) : 1]
+    );
+    res.status(201).json({ mensaje: 'Plan creado', id: result.lastInsertRowid });
+});
+
+// PUT /api/superadmin/planes/:id - Actualizar un plan
+router.put('/planes/:id', verificarToken, verificarSuperAdmin, async (req, res) => {
+    const { nombre, descripcion, precio, periodo, caracteristicas, activo } = req.body;
+    await queryRun(
+        'UPDATE planes SET nombre=$1, descripcion=$2, precio=$3, periodo=$4, caracteristicas=$5, activo=$6 WHERE id=$7',
+        [nombre, descripcion || '', precio, periodo || 'mensual', caracteristicas || '', activo !== undefined ? (activo ? 1 : 0) : 1, req.params.id]
+    );
+    res.json({ mensaje: 'Plan actualizado' });
+});
+
+// DELETE /api/superadmin/planes/:id - Eliminar un plan
+router.delete('/planes/:id', verificarToken, verificarSuperAdmin, async (req, res) => {
+    await queryRun('DELETE FROM planes WHERE id = $1', [req.params.id]);
+    res.json({ mensaje: 'Plan eliminado' });
+});
+
 // GET /api/superadmin/stats - Estadísticas globales
 router.get('/stats', verificarToken, verificarSuperAdmin, async (req, res) => {
     const totalEmpresas = await queryGet('SELECT COUNT(*) as t FROM empresas');
