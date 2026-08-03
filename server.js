@@ -72,6 +72,18 @@ app.use('/api/resoluciones', resolucionRoutes);
 const superAdminRoutes = require('./routes/superadmin');
 app.use('/api/superadmin', superAdminRoutes);
 
+// --- Planes públicos (para la landing page) ---
+const { queryAll } = require('./database');
+app.get('/api/planes', async (req, res) => {
+    try {
+        const planes = await queryAll('SELECT id, nombre, descripcion, precio, periodo, caracteristicas FROM planes WHERE activo = 1 ORDER BY precio ASC');
+        res.json(planes);
+    } catch (err) {
+        console.error('Error al obtener planes:', err);
+        res.status(500).json({ error: 'Error al obtener los planes' });
+    }
+});
+
 // Ruta principal - Landing Page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'landing.html'));

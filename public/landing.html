@@ -260,7 +260,7 @@
                         <p class="text-sm text-slate-500">Para pequeñas empresas</p>
                     </div>
                     <div class="text-center mb-6">
-                        <span class="text-5xl font-bold">$49</span>
+                        <span class="text-5xl font-bold" id="precio-basico">$49</span>
                         <span class="text-slate-500">/mes</span>
                         <p class="text-xs text-slate-600 mt-2">Facturación mensual</p>
                     </div>
@@ -288,7 +288,7 @@
                         <p class="text-sm text-slate-500">Para medianas empresas</p>
                     </div>
                     <div class="text-center mb-6">
-                        <span class="text-5xl font-bold">$99</span>
+                        <span class="text-5xl font-bold" id="precio-profesional">$99</span>
                         <span class="text-slate-500">/mes</span>
                         <p class="text-xs text-slate-600 mt-2">Facturación mensual</p>
                     </div>
@@ -316,7 +316,7 @@
                         <p class="text-sm text-slate-500">Para grandes organizaciones</p>
                     </div>
                     <div class="text-center mb-6">
-                        <span class="text-5xl font-bold">$199</span>
+                        <span class="text-5xl font-bold" id="precio-empresarial">$199</span>
                         <span class="text-slate-500">/mes</span>
                         <p class="text-xs text-slate-600 mt-2">Facturación mensual</p>
                     </div>
@@ -573,5 +573,45 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        // Cargar precios de planes desde la base de datos
+        async function cargarPreciosPlanes() {
+            try {
+                const response = await fetch('/api/planes');
+                if (!response.ok) throw new Error('Error al obtener planes');
+                const planes = await response.json();
+                
+                // Mapear por nombre para actualizar los precios en la página
+                const mapaPrecios = {
+                    'Básico': 'precio-basico',
+                    'Basico': 'precio-basico',
+                    'Profesional': 'precio-profesional',
+                    'Empresarial': 'precio-empresarial'
+                };
+                
+                planes.forEach(plan => {
+                    const elementoId = mapaPrecios[plan.nombre];
+                    if (elementoId) {
+                        const elemento = document.getElementById(elementoId);
+                        if (elemento) {
+                            // Formatear precio en pesos colombianos
+                            const precio = Number(plan.precio);
+                            const precioFormateado = precio === 0 
+                                ? 'Gratis' 
+                                : '$' + precio.toLocaleString('es-CO');
+                            elemento.textContent = precioFormateado;
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error('Error al cargar precios de planes:', err);
+                // Mantener los precios por defecto si falla la carga
+            }
+        }
+        
+        // Ejecutar al cargar la página
+        document.addEventListener('DOMContentLoaded', cargarPreciosPlanes);
+    </script>
 </body>
 </html>
