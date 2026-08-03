@@ -293,7 +293,14 @@ async function seedData() {
             const hash = bcrypt.hashSync('Castro161219@', 10);
             await client.query(
                 'UPDATE usuarios SET email = $1, password = $2 WHERE rol = $3 AND email = $4',
-                ['jesuscastrosg@gmail.com', hash, 'admin', 'admin@pesv.com']
+                ['admin@pesv.com', hash, 'admin', 'admin@pesv.com']
+            );
+
+            // Migración: renombrar el admin demo que usaba un correo personal
+            // (jesuscastrosg@gmail.com) al correo genérico admin@pesv.com
+            await client.query(
+                'UPDATE usuarios SET email = $1 WHERE rol = $2 AND email = $3',
+                ['admin@pesv.com', 'admin', 'jesuscastrosg@gmail.com']
             );
             return;
         }
@@ -309,7 +316,7 @@ async function seedData() {
         const hash = bcrypt.hashSync('Castro161219@', 10);
         await client.query(
             'INSERT INTO usuarios (empresa_id, nombre, email, password, rol) VALUES ($1, $2, $3, $4, $5)',
-            [empresaId, 'Admin PESV', 'jesuscastrosg@gmail.com', hash, 'admin']
+            [empresaId, 'Admin PESV', 'admin@pesv.com', hash, 'admin']
         );
 
         const hash2 = bcrypt.hashSync('coord123', 10);

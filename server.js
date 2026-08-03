@@ -96,7 +96,7 @@ app.use((err, req, res, next) => {
 // Arrancar servidor HTTP primero (evita Bad Gateway si la BD tarda en conectar)
 app.listen(PORT, () => {
     console.log(`🚀 Servidor PESV Integral corriendo en http://localhost:${PORT}`);
-    console.log(`📧 Admin demo: jesuscastrosg@gmail.com / Castro161219@`);
+    console.log(`📧 Admin demo: admin@pesv.com / Castro161219@`);
     console.log(`📧 Coordinador demo: coordinador@pesv.com / coord123`);
     console.log(`📦 Base de datos PostgreSQL: ${process.env.DB_DATABASE || 'pesv_integral'}`);
 });
