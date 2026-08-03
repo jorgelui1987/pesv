@@ -75,6 +75,111 @@ router.get('/backup', verificarToken, verificarRol('admin'), async (req, res) =>
     }
 });
 
+// POST /api/empresas/restaurar-backup - Restaurar los datos del PESV desde un backup JSON
+// (solo admin de la empresa). Limpia los datos actuales y recrea fases, pasos,
+// indicadores, registros, acciones, auditorías y evidencias desde el backup.
+// Los usuarios y la cuenta de la empresa se conservan.
+router.post('/restaurar-backup', verificarToken, verificarRol('admin'), async (req, res) => {
+    try {
+        const empresaId = req.usuario.empresa_id;
+        const backup = req.body;
+
+        // Validar que el backup tenga la estructura esperada
+        if (!backup || !Array.isArray(backup.fases) || !Array.isArray(backup.pasos)) {
+            return res.status(400).json({ error: 'El archivo de backup no es válido o está incompleto' });
+        }
+
+        // 1. Limpiar los datos operativos actuales de la empresa
+        await queryRun('DELETE FROM evidencias WHERE empresa_id = $1', [empresaId]);
+        await queryRun('DELETE FROM registros_indicadores WHERE empresa_id = $1', [empresaId]);
+        await queryRun('DELETE FROM indicadores WHERE empresa_id = $1', [empresaId]);
+        await queryRun('DELETE FROM acciones_mejora WHERE empresa_id = $1', [empresaId]);
+        await queryRun('DELETE FROM auditorias WHERE empresa_id = $1', [empresaId]);
+        await queryRun('DELETE FROM pasos WHERE empresa_id = $1', [empresaId]);
+        await queryRun('DELETE FROM fases WHERE empresa_id = $1', [empresaId]);
+
+        // 2. Recrear fases y pasos desde el backup (mapeando IDs antiguos a nuevos)
+        const faseIdMap = {};
+        for (const fase of backup.fases) {
+            const fResult = await queryRun(
+                'INSERT INTO fases (empresa_id, nombre, descripcion, orden) VALUES ($1, $2, $3, $4) RETURNING id',
+                [empresaId, fase.nombre, fase.descripcion || '', fase.orden || 0]
+            );
+            faseIdMap[fase.id] = fResult.lastInsertRowid;
+        }
+
+        const pasoIdMap = {};
+        for (const paso of backup.pasos) {
+            const nuevaFaseId = faseIdMap[paso.fase_id];
+            if (!nuevaFaseId) continue;
+            const pResult = await queryRun(
+                'INSERT INTO pasos (fase_id, empresa_id, codigo, nombre, descripcion, responsable, fecha_limite, orden) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+                [nuevaFaseId, empresaId, paso.codigo, paso.nombre, paso.descripcion || '', paso.responsable || null, paso.fecha_limite || null, paso.orden || 0]
+            );
+            pasoIdMap[paso.id] = pResult.lastInsertRowid;
+        }
+
+        // 3. Recrear indicadores y sus registros
+        const indicadorIdMap = {};
+        if (Array.isArray(backup.indicadores)) {
+            for (const ind of backup.indicadores) {
+                const iResult = await queryRun(
+                    'INSERT INTO indicadores (empresa_id, nombre, descripcion, formula, meta, periodo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+                    [empresaId, ind.nombre, ind.descripcion || '', ind.formula || '', ind.meta || null, ind.periodo || 'mensual']
+                );
+                indicadorIdMap[ind.id] = iResult.lastInsertRowid;
+            }
+        }
+        if (Array.isArray(backup.registros_indicadores)) {
+            for (const reg of backup.registros_indicadores) {
+                const nuevoIndId = indicadorIdMap[reg.indicador_id];
+                if (!nuevoIndId) continue;
+                await queryRun(
+                    'INSERT INTO registros_indicadores (indicador_id, empresa_id, valor, fecha, observaciones) VALUES ($1, $2, $3, $4, $5)',
+                    [nuevoIndId, empresaId, reg.valor, reg.fecha, reg.observaciones || '']
+                );
+            }
+        }
+
+        // 4. Recrear acciones de mejora
+        if (Array.isArray(backup.acciones_mejora)) {
+            for (const acc of backup.acciones_mejora) {
+                await queryRun(
+                    'INSERT INTO acciones_mejora (empresa_id, origen, descripcion, responsable, fecha_compromiso, estado) VALUES ($1, $2, $3, $4, $5, $6)',
+                    [empresaId, acc.origen || '', acc.descripcion, acc.responsable || null, acc.fecha_compromiso || null, acc.estado || 'abierta']
+                );
+            }
+        }
+
+        // 5. Recrear auditorías
+        if (Array.isArray(backup.auditorias)) {
+            for (const aud of backup.auditorias) {
+                await queryRun(
+                    'INSERT INTO auditorias (empresa_id, tipo, fecha, auditor, hallazgos, resultado) VALUES ($1, $2, $3, $4, $5, $6)',
+                    [empresaId, aud.tipo || 'interna', aud.fecha, aud.auditor || null, aud.hallazgos || '', aud.resultado || '']
+                );
+            }
+        }
+
+        // 6. Recrear evidencias (mapeando paso_id)
+        if (Array.isArray(backup.evidencias)) {
+            for (const ev of backup.evidencias) {
+                const nuevoPasoId = pasoIdMap[ev.paso_id];
+                if (!nuevoPasoId) continue;
+                await queryRun(
+                    'INSERT INTO evidencias (paso_id, empresa_id, usuario_id, estado, descripcion, archivo_nombre, archivo_ruta, observaciones, fecha_ejecucion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+                    [nuevoPasoId, empresaId, req.usuario.id, ev.estado || 'pendiente', ev.descripcion || '', ev.archivo_nombre || null, ev.archivo_ruta || null, ev.observaciones || '', ev.fecha_ejecucion || null]
+                );
+            }
+        }
+
+        res.json({ mensaje: 'Backup restaurado correctamente. Los datos del PESV fueron recuperados.' });
+    } catch (err) {
+        console.error('Error al restaurar backup:', err);
+        res.status(500).json({ error: 'Error al restaurar el backup: ' + err.message });
+    }
+});
+
 // POST /api/empresas/limpiar-datos - Eliminar todos los datos del PESV de la empresa
 // conservando los usuarios y la cuenta de la empresa. Luego recrea las fases y
 // pasos por defecto para que la empresa pueda empezar de nuevo.
