@@ -35,6 +35,46 @@ router.post('/usuarios', verificarToken, verificarRol('admin'), async (req, res)
     res.status(201).json({ mensaje: 'Usuario creado' });
 });
 
+// GET /api/empresas/backup - Exportar todos los datos de la empresa como JSON
+// (solo admin de la empresa). Permite descargar un respaldo antes de un reset.
+router.get('/backup', verificarToken, verificarRol('admin'), async (req, res) => {
+    try {
+        const empresaId = req.usuario.empresa_id;
+
+        const empresa = await queryGet('SELECT * FROM empresas WHERE id = $1', [empresaId]);
+        const usuarios = await queryAll('SELECT id, nombre, email, rol, activo, created_at FROM usuarios WHERE empresa_id = $1', [empresaId]);
+        const fases = await queryAll('SELECT * FROM fases WHERE empresa_id = $1 ORDER BY orden', [empresaId]);
+        const pasos = await queryAll('SELECT * FROM pasos WHERE empresa_id = $1 ORDER BY orden', [empresaId]);
+        const evidencias = await queryAll('SELECT * FROM evidencias WHERE empresa_id = $1', [empresaId]);
+        const indicadores = await queryAll('SELECT * FROM indicadores WHERE empresa_id = $1', [empresaId]);
+        const registros = await queryAll('SELECT * FROM registros_indicadores WHERE empresa_id = $1', [empresaId]);
+        const acciones = await queryAll('SELECT * FROM acciones_mejora WHERE empresa_id = $1', [empresaId]);
+        const auditorias = await queryAll('SELECT * FROM auditorias WHERE empresa_id = $1', [empresaId]);
+
+        const backup = {
+            sistema: 'PESV Integral',
+            version: '1.0.0',
+            fecha_generacion: new Date().toISOString(),
+            empresa,
+            usuarios,
+            fases,
+            pasos,
+            evidencias,
+            indicadores,
+            registros_indicadores: registros,
+            acciones_mejora: acciones,
+            auditorias
+        };
+
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="backup_pesv_${empresaId}_${Date.now()}.json"`);
+        res.json(backup);
+    } catch (err) {
+        console.error('Error al generar backup:', err);
+        res.status(500).json({ error: 'Error al generar el backup' });
+    }
+});
+
 // POST /api/empresas/limpiar-datos - Eliminar todos los datos del PESV de la empresa
 // conservando los usuarios y la cuenta de la empresa. Luego recrea las fases y
 // pasos por defecto para que la empresa pueda empezar de nuevo.
