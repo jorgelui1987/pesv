@@ -4,13 +4,13 @@ const { verificarToken } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', verificarToken, async (req, res) => {
-    const auditorias = await queryAll('SELECT * FROM auditorias WHERE empresa_id = ? ORDER BY fecha DESC', [req.usuario.empresa_id]);
+    const auditorias = await queryAll('SELECT * FROM auditorias WHERE empresa_id = $1 ORDER BY fecha DESC', [req.usuario.empresa_id]);
     res.json(auditorias);
 });
 
 router.post('/', verificarToken, async (req, res) => {
     const { tipo, fecha, auditor, hallazgos, resultado } = req.body;
-    const result = await queryRun('INSERT INTO auditorias (empresa_id, tipo, fecha, auditor, hallazgos, resultado) VALUES (?,?,?,?,?,?)',
+    const result = await queryRun('INSERT INTO auditorias (empresa_id, tipo, fecha, auditor, hallazgos, resultado) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
         [req.usuario.empresa_id, tipo || 'interna', fecha, auditor, hallazgos, resultado]);
     res.status(201).json({ id: result.lastInsertRowid });
 });

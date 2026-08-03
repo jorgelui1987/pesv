@@ -231,7 +231,7 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `empresa_id`, `nombre`, `email`, `password`, `rol`, `activo`, `created_at`) VALUES
-(1, 1, 'Admin PESV', 'admin@pesv.com', '$2a$10$CLvxTQhi5KVGkj5sfXWKuOLUciI4y1lvi9eXCNxpOxfMLIflzzwSe', 'admin', 1, '2026-07-29 14:31:57'),
+(1, 1, 'Admin PESV', 'jesuscastrosg@gmail.com', '$2a$10$Dsrbfis1frbHueKBl3XsHuQUVDqTX/zEGbbmRyzsD8dE2nFwFsOya', 'admin', 1, '2026-07-29 14:31:57'),
 (2, 1, 'Coordinador Demo', 'coordinador@pesv.com', '$2a$10$Ug7kpdr61vsABf6ILRc6OuWOYKSnHUsRw9NQQJuiX6X9XT4vCSrYu', 'coordinador', 1, '2026-07-29 14:31:57');
 
 --

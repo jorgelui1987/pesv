@@ -16,7 +16,7 @@ router.post('/login', async (req, res) => {
             SELECT u.*, e.nombre as empresa_nombre 
             FROM usuarios u 
             JOIN empresas e ON u.empresa_id = e.id 
-            WHERE u.email = ? AND u.activo = 1 AND e.activo = 1
+            WHERE u.email = $1 AND u.activo = 1 AND e.activo = 1
         `, [email]);
 
         if (!usuario) {
@@ -54,16 +54,16 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Todos los campos son requeridos' });
         }
 
-        const existe = await queryGet('SELECT id FROM usuarios WHERE email = ?', [email]);
+        const existe = await queryGet('SELECT id FROM usuarios WHERE email = $1', [email]);
         if (existe) {
             return res.status(400).json({ error: 'El email ya está registrado' });
         }
 
-        const empResult = await queryRun('INSERT INTO empresas (nombre, nit) VALUES (?, ?)', [empresa_nombre, nit]);
+        const empResult = await queryRun('INSERT INTO empresas (nombre, nit) VALUES ($1, $2) RETURNING id', [empresa_nombre, nit]);
         const empresaId = empResult.lastInsertRowid;
 
         const hash = bcrypt.hashSync(password, 10);
-        await queryRun('INSERT INTO usuarios (empresa_id, nombre, email, password, rol) VALUES (?, ?, ?, ?, ?)',
+        await queryRun('INSERT INTO usuarios (empresa_id, nombre, email, password, rol) VALUES ($1, $2, $3, $4, $5)',
             [empresaId, nombre, email, hash, 'admin']);
 
         const fases = [
@@ -110,11 +110,11 @@ router.post('/register', async (req, res) => {
         ];
 
         for (let i = 0; i < fases.length; i++) {
-            const fResult = await queryRun('INSERT INTO fases (empresa_id, nombre, orden) VALUES (?, ?, ?)',
+            const fResult = await queryRun('INSERT INTO fases (empresa_id, nombre, orden) VALUES ($1, $2, $3) RETURNING id',
                 [empresaId, fases[i].nombre, fases[i].orden]);
             const pasos = pasosPorFase[i];
             for (let j = 0; j < pasos.length; j++) {
-                await queryRun('INSERT INTO pasos (fase_id, empresa_id, codigo, nombre, orden) VALUES (?, ?, ?, ?, ?)',
+                await queryRun('INSERT INTO pasos (fase_id, empresa_id, codigo, nombre, orden) VALUES ($1, $2, $3, $4, $5)',
                     [fResult.lastInsertRowid, empresaId, pasos[j].codigo, pasos[j].nombre, j + 1]);
             }
         }
@@ -131,7 +131,7 @@ router.get('/perfil', verificarToken, async (req, res) => {
     const usuario = await queryGet(`
         SELECT u.id, u.nombre, u.email, u.rol, u.empresa_id, e.nombre as empresa_nombre
         FROM usuarios u JOIN empresas e ON u.empresa_id = e.id
-        WHERE u.id = ?
+        WHERE u.id = $1
     `, [req.usuario.id]);
     res.json(usuario);
 });

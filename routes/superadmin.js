@@ -29,21 +29,21 @@ router.get('/empresas', verificarToken, esSuperAdmin, async (req, res) => {
 // PUT /api/superadmin/empresas/:id/estado - Activar/Desactivar empresa
 router.put('/empresas/:id/estado', verificarToken, esSuperAdmin, async (req, res) => {
     const { activo } = req.body;
-    await queryRun('UPDATE empresas SET activo = ? WHERE id = ?', [activo ? 1 : 0, req.params.id]);
+    await queryRun('UPDATE empresas SET activo = $1 WHERE id = $2', [activo ? 1 : 0, req.params.id]);
     res.json({ mensaje: activo ? 'Empresa activada' : 'Empresa desactivada' });
 });
 
 // PUT /api/superadmin/empresas/:id - Editar empresa
 router.put('/empresas/:id', verificarToken, esSuperAdmin, async (req, res) => {
     const { nombre, nit, direccion, telefono, email_contacto } = req.body;
-    await queryRun('UPDATE empresas SET nombre=?, nit=?, direccion=?, telefono=?, email_contacto=? WHERE id=?',
+    await queryRun('UPDATE empresas SET nombre=$1, nit=$2, direccion=$3, telefono=$4, email_contacto=$5 WHERE id=$6',
         [nombre, nit, direccion, telefono, email_contacto, req.params.id]);
     res.json({ mensaje: 'Empresa actualizada' });
 });
 
 // DELETE /api/superadmin/empresas/:id - Eliminar empresa
 router.delete('/empresas/:id', verificarToken, esSuperAdmin, async (req, res) => {
-    await queryRun('DELETE FROM empresas WHERE id = ?', [req.params.id]);
+    await queryRun('DELETE FROM empresas WHERE id = $1', [req.params.id]);
     res.json({ mensaje: 'Empresa eliminada' });
 });
 
@@ -57,9 +57,9 @@ router.get('/stats', verificarToken, esSuperAdmin, async (req, res) => {
     const completadas = await queryGet("SELECT COUNT(*) as t FROM evidencias WHERE estado='finalizado'");
 
     const empresasPorMes = await queryAll(`
-        SELECT DATE_FORMAT(created_at, '%Y-%m') as mes, COUNT(*) as total 
+        SELECT TO_CHAR(created_at, 'YYYY-MM') as mes, COUNT(*) as total 
         FROM empresas 
-        GROUP BY DATE_FORMAT(created_at, '%Y-%m') 
+        GROUP BY TO_CHAR(created_at, 'YYYY-MM') 
         ORDER BY mes DESC LIMIT 12
     `);
 

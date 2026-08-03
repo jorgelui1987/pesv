@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -96,11 +97,11 @@ app.use((err, req, res, next) => {
 getPool().then(() => {
     app.listen(PORT, () => {
         console.log(`🚀 Servidor PESV Integral corriendo en http://localhost:${PORT}`);
-        console.log(`📧 Admin demo: admin@pesv.com / admin123`);
+        console.log(`📧 Admin demo: jesuscastrosg@gmail.com / Castro161219@`);
         console.log(`📧 Coordinador demo: coordinador@pesv.com / coord123`);
-        console.log(`📦 Base de datos MySQL: pesv_integral`);
+        console.log(`📦 Base de datos PostgreSQL: ${process.env.DB_DATABASE || 'pesv_integral'}`);
     });
 }).catch(err => {
-    console.error('Error al conectar con MySQL:', err);
+    console.error('Error al conectar con PostgreSQL:', err);
     process.exit(1);
 });

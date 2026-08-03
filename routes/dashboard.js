@@ -6,14 +6,14 @@ const router = express.Router();
 router.get('/', verificarToken, async (req, res) => {
     const empresaId = req.usuario.empresa_id;
 
-    const fases = await queryAll('SELECT * FROM fases WHERE empresa_id = ? ORDER BY orden', [empresaId]);
+    const fases = await queryAll('SELECT * FROM fases WHERE empresa_id = $1 ORDER BY orden', [empresaId]);
     const resumenFases = [];
     for (const f of fases) {
-        const total = await queryGet('SELECT COUNT(*) as t FROM pasos WHERE fase_id = ?', [f.id]);
+        const total = await queryGet('SELECT COUNT(*) as t FROM pasos WHERE fase_id = $1', [f.id]);
         const completados = await queryGet(`
             SELECT COUNT(DISTINCT p.id) as t FROM pasos p 
             JOIN evidencias e ON e.paso_id = p.id 
-            WHERE p.fase_id = ? AND e.estado = 'finalizado'
+            WHERE p.fase_id = $1 AND e.estado = 'finalizado'
         `, [f.id]);
         resumenFases.push({
             id: f.id,
@@ -25,19 +25,19 @@ router.get('/', verificarToken, async (req, res) => {
         });
     }
 
-    const totalEvidencias = await queryGet('SELECT COUNT(*) as t FROM evidencias WHERE empresa_id = ?', [empresaId]);
-    const pendiente = await queryGet("SELECT COUNT(*) as t FROM evidencias WHERE empresa_id = ? AND estado='pendiente'", [empresaId]);
-    const enProceso = await queryGet("SELECT COUNT(*) as t FROM evidencias WHERE empresa_id = ? AND estado='en_proceso'", [empresaId]);
-    const finalizado = await queryGet("SELECT COUNT(*) as t FROM evidencias WHERE empresa_id = ? AND estado='finalizado'", [empresaId]);
+    const totalEvidencias = await queryGet('SELECT COUNT(*) as t FROM evidencias WHERE empresa_id = $1', [empresaId]);
+    const pendiente = await queryGet("SELECT COUNT(*) as t FROM evidencias WHERE empresa_id = $1 AND estado='pendiente'", [empresaId]);
+    const enProceso = await queryGet("SELECT COUNT(*) as t FROM evidencias WHERE empresa_id = $1 AND estado='en_proceso'", [empresaId]);
+    const finalizado = await queryGet("SELECT COUNT(*) as t FROM evidencias WHERE empresa_id = $1 AND estado='finalizado'", [empresaId]);
 
-    const accionesAbiertas = await queryGet("SELECT COUNT(*) as t FROM acciones_mejora WHERE empresa_id = ? AND estado != 'cerrada'", [empresaId]);
+    const accionesAbiertas = await queryGet("SELECT COUNT(*) as t FROM acciones_mejora WHERE empresa_id = $1 AND estado != 'cerrada'", [empresaId]);
 
     const ultimasEvidencias = await queryAll(`
         SELECT e.*, p.nombre as paso_nombre, u.nombre as usuario_nombre
         FROM evidencias e 
         JOIN pasos p ON e.paso_id = p.id 
         JOIN usuarios u ON e.usuario_id = u.id 
-        WHERE e.empresa_id = ? 
+        WHERE e.empresa_id = $1 
         ORDER BY e.updated_at DESC LIMIT 5
     `, [empresaId]);
 

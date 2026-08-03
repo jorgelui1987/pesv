@@ -1,0 +1,33 @@
+# ============================================
+# PESV Integral - Docker Compose
+# ============================================
+# Uso: docker compose up -d
+# Acceso: http://localhost:3000
+# ============================================
+
+version: '3.8'
+
+services:
+  # --- Aplicación Node.js ---
+  app:
+    build: .
+    container_name: pesv_app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_CONNECTION: postgresql
+      DB_HOST: ${DB_HOST:-alentohumano-talentohumano-jpkhca}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: ${DB_DATABASE:-talento}
+      DB_USERNAME: ${DB_USERNAME:-ttalento}
+      DB_PASSWORD: ${DB_PASSWORD:-Castro161219@}
+      APP_URL: ${APP_URL:-talentohumano-jesus-alberto-ougwxn-d4d88c-179-197-239-161.sslip.io}
+      JWT_SECRET: ${JWT_SECRET:-PESV_Integral_Secret_Key_2024_Saas}
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads_data:/app/uploads
+
+volumes:
+  uploads_data:

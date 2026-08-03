@@ -1,21 +1,26 @@
 # Dependencias
-node_modules/
-
-# Base de datos local
-pesv_saas.db
-*.sql
+node_modules
+npm-debug.log
 
 # Entorno
 .env
 .env.local
 .env.production
 
+# Git
+.git
+.gitignore
+
+# Base de datos local
+pesv_saas.db
+*.sql
+
 # Archivos sensibles
 credencial talento humano.txt
 
 # Editor
-.vscode/
-.idea/
+.vscode
+.idea
 
 # Sistema
 .DS_Store
