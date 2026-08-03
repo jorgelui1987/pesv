@@ -93,15 +93,18 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Error interno del servidor', detalle: err.message });
 });
 
-// Inicializar pool y arrancar servidor
+// Arrancar servidor HTTP primero (evita Bad Gateway si la BD tarda en conectar)
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor PESV Integral corriendo en http://localhost:${PORT}`);
+    console.log(`📧 Admin demo: jesuscastrosg@gmail.com / Castro161219@`);
+    console.log(`📧 Coordinador demo: coordinador@pesv.com / coord123`);
+    console.log(`📦 Base de datos PostgreSQL: ${process.env.DB_DATABASE || 'pesv_integral'}`);
+});
+
+// Inicializar pool de PostgreSQL de forma asíncrona (no bloquea el arranque)
 getPool().then(() => {
-    app.listen(PORT, () => {
-        console.log(`🚀 Servidor PESV Integral corriendo en http://localhost:${PORT}`);
-        console.log(`📧 Admin demo: jesuscastrosg@gmail.com / Castro161219@`);
-        console.log(`📧 Coordinador demo: coordinador@pesv.com / coord123`);
-        console.log(`📦 Base de datos PostgreSQL: ${process.env.DB_DATABASE || 'pesv_integral'}`);
-    });
+    console.log('✅ Conexión a PostgreSQL establecida correctamente');
 }).catch(err => {
-    console.error('Error al conectar con PostgreSQL:', err);
-    process.exit(1);
+    console.error('❌ Error al conectar con PostgreSQL:', err.message);
+    console.error('   La aplicación seguirá funcionando, pero las funciones de BD no estarán disponibles.');
 });

@@ -17,10 +17,10 @@ services:
       NODE_ENV: production
       PORT: 3000
       DB_CONNECTION: postgresql
-      DB_HOST: ${DB_HOST:-alentohumano-talentohumano-jpkhca}
+      DB_HOST: ${DB_HOST:-talentohumano-talentohumano-jpkhca}
       DB_PORT: ${DB_PORT:-5432}
       DB_DATABASE: ${DB_DATABASE:-talento}
-      DB_USERNAME: ${DB_USERNAME:-ttalento}
+      DB_USERNAME: ${DB_USERNAME:-talento}
       DB_PASSWORD: ${DB_PASSWORD:-Castro161219@}
       DB_SSL: ${DB_SSL:-true}
       DATABASE_URL: ${DATABASE_URL:-}
