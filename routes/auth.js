@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { queryGet, queryRun } = require('../database');
-const { generarToken, verificarToken } = require('../middleware/auth');
+const { generarToken, verificarToken, verificarSuperAdmin, esSuperAdminUsuario } = require('../middleware/auth');
 const router = express.Router();
 
 // POST /api/auth/login
@@ -37,7 +37,8 @@ router.post('/login', async (req, res) => {
                 email: usuario.email,
                 rol: usuario.rol,
                 empresa_id: usuario.empresa_id,
-                empresa_nombre: usuario.empresa_nombre
+                empresa_nombre: usuario.empresa_nombre,
+                es_super_admin: esSuperAdminUsuario(usuario)
             }
         });
     } catch (err) {
@@ -133,6 +134,9 @@ router.get('/perfil', verificarToken, async (req, res) => {
         FROM usuarios u JOIN empresas e ON u.empresa_id = e.id
         WHERE u.id = $1
     `, [req.usuario.id]);
+    if (usuario) {
+        usuario.es_super_admin = esSuperAdminUsuario(usuario);
+    }
     res.json(usuario);
 });
 

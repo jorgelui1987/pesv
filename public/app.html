@@ -261,10 +261,15 @@ function iniciarApp() {
     $('usuario-rol').textContent = usuarioActual.rol.charAt(0).toUpperCase() + usuarioActual.rol.slice(1);
     $('empresa-nombre').textContent = usuarioActual.empresa_nombre;
     $('avatar-iniciales').textContent = usuarioActual.nombre.charAt(0).toUpperCase();
-    if (usuarioActual.rol === 'admin') $('sidebar-superadmin').classList.remove('hidden');
+    if (usuarioActual.es_super_admin) $('sidebar-superadmin').classList.remove('hidden');
     navegar('dashboard');
 }
 function navegar(vista) {
+    // Protección: el Panel Admin solo es accesible para el super admin global.
+    // Si un usuario sin permisos intenta navegar al panel, se redirige al dashboard.
+    if (vista === 'superadmin' && !usuarioActual?.es_super_admin) {
+        vista = 'dashboard';
+    }
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
     const view = $(`view-${vista}`);
     if (view) view.classList.remove('hidden');

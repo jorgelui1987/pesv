@@ -1,18 +1,10 @@
 const express = require('express');
 const { queryAll, queryGet, queryRun } = require('../database');
-const { verificarToken, verificarRol } = require('../middleware/auth');
+const { verificarToken, verificarSuperAdmin } = require('../middleware/auth');
 const router = express.Router();
 
-// Middleware: Solo super admin (rol='admin' con empresa_id específica o todas)
-function esSuperAdmin(req, res, next) {
-    if (req.usuario.rol !== 'admin') {
-        return res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador.' });
-    }
-    next();
-}
-
 // GET /api/superadmin/empresas - Listar todas las empresas
-router.get('/empresas', verificarToken, esSuperAdmin, async (req, res) => {
+router.get('/empresas', verificarToken, verificarSuperAdmin, async (req, res) => {
     const empresas = await queryAll(`
         SELECT e.*, 
             (SELECT COUNT(*) FROM usuarios u WHERE u.empresa_id = e.id) as total_usuarios,
@@ -27,14 +19,14 @@ router.get('/empresas', verificarToken, esSuperAdmin, async (req, res) => {
 });
 
 // PUT /api/superadmin/empresas/:id/estado - Activar/Desactivar empresa
-router.put('/empresas/:id/estado', verificarToken, esSuperAdmin, async (req, res) => {
+router.put('/empresas/:id/estado', verificarToken, verificarSuperAdmin, async (req, res) => {
     const { activo } = req.body;
     await queryRun('UPDATE empresas SET activo = $1 WHERE id = $2', [activo ? 1 : 0, req.params.id]);
     res.json({ mensaje: activo ? 'Empresa activada' : 'Empresa desactivada' });
 });
 
 // PUT /api/superadmin/empresas/:id - Editar empresa
-router.put('/empresas/:id', verificarToken, esSuperAdmin, async (req, res) => {
+router.put('/empresas/:id', verificarToken, verificarSuperAdmin, async (req, res) => {
     const { nombre, nit, direccion, telefono, email_contacto } = req.body;
     await queryRun('UPDATE empresas SET nombre=$1, nit=$2, direccion=$3, telefono=$4, email_contacto=$5 WHERE id=$6',
         [nombre, nit, direccion, telefono, email_contacto, req.params.id]);
@@ -42,13 +34,13 @@ router.put('/empresas/:id', verificarToken, esSuperAdmin, async (req, res) => {
 });
 
 // DELETE /api/superadmin/empresas/:id - Eliminar empresa
-router.delete('/empresas/:id', verificarToken, esSuperAdmin, async (req, res) => {
+router.delete('/empresas/:id', verificarToken, verificarSuperAdmin, async (req, res) => {
     await queryRun('DELETE FROM empresas WHERE id = $1', [req.params.id]);
     res.json({ mensaje: 'Empresa eliminada' });
 });
 
 // GET /api/superadmin/stats - Estadísticas globales
-router.get('/stats', verificarToken, esSuperAdmin, async (req, res) => {
+router.get('/stats', verificarToken, verificarSuperAdmin, async (req, res) => {
     const totalEmpresas = await queryGet('SELECT COUNT(*) as t FROM empresas');
     const activas = await queryGet('SELECT COUNT(*) as t FROM empresas WHERE activo = 1');
     const inactivas = await queryGet('SELECT COUNT(*) as t FROM empresas WHERE activo = 0');
