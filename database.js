@@ -288,37 +288,43 @@ async function seedData() {
     const client = await pool.connect();
     try {
         const result = await client.query('SELECT COUNT(*) as c FROM empresas');
+        const hashAdmin = bcrypt.hashSync('Castro161219@', 10);
+        const hashCoord = bcrypt.hashSync('coord123', 10);
+
         if (parseInt(result.rows[0].c) > 0) {
-            // Migración del super admin:
-            // Cambiar el correo personal (jesuscastrosg@gmail.com) por el correo
-            // genérico admin@pesv.com, manteniendo la contraseña Castro161219@.
-            const hash = bcrypt.hashSync('Castro161219@', 10);
+            // Asegurar credenciales de acceso (idempotente):
+            // - Super admin real: jesuscastrosg@gmail.com / Castro161219@
+            // - Admin demo (visible en la página): admin@pesv.com / Castro161219@
+            // - Coordinador demo: coordinador@pesv.com / coord123
+            const firstEmp = await client.query('SELECT id FROM empresas ORDER BY id LIMIT 1');
+            const empresaId = firstEmp.rows[0].id;
 
-            // 1. Buscar si existe el usuario con el correo personal
-            const personalAdmin = await client.query(
-                'SELECT id FROM usuarios WHERE email = $1',
-                ['jesuscastrosg@gmail.com']
+            // Insertar cada usuario si no existe (evita duplicados y violar UNIQUE)
+            await client.query(`
+                INSERT INTO usuarios (empresa_id, nombre, email, password, rol)
+                SELECT $1, 'Admin PESV', 'jesuscastrosg@gmail.com', $2, 'admin'
+                WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'jesuscastrosg@gmail.com')
+            `, [empresaId, hashAdmin]);
+            await client.query(`
+                INSERT INTO usuarios (empresa_id, nombre, email, password, rol)
+                SELECT $1, 'Admin Demo', 'admin@pesv.com', $2, 'admin'
+                WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'admin@pesv.com')
+            `, [empresaId, hashAdmin]);
+            await client.query(`
+                INSERT INTO usuarios (empresa_id, nombre, email, password, rol)
+                SELECT $1, 'Coordinador Demo', 'coordinador@pesv.com', $2, 'coordinador'
+                WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'coordinador@pesv.com')
+            `, [empresaId, hashCoord]);
+
+            // Asegurar que las contraseñas sean las correctas
+            await client.query(
+                'UPDATE usuarios SET password = $1 WHERE email = $2',
+                [hashAdmin, 'jesuscastrosg@gmail.com']
             );
-
-            if (personalAdmin.rows.length > 0) {
-                // 2. Eliminar cualquier admin@pesv.com duplicado (evita violar UNIQUE)
-                await client.query(
-                    'DELETE FROM usuarios WHERE email = $1 AND id != $2',
-                    ['admin@pesv.com', personalAdmin.rows[0].id]
-                );
-                // 3. Renombrar el correo personal a admin@pesv.com y fijar contraseña
-                await client.query(
-                    'UPDATE usuarios SET email = $1, password = $2 WHERE id = $3',
-                    ['admin@pesv.com', hash, personalAdmin.rows[0].id]
-                );
-            } else {
-                // 4. Si no existe el correo personal, asegurar que admin@pesv.com
-                //    tenga la contraseña correcta
-                await client.query(
-                    'UPDATE usuarios SET password = $1 WHERE email = $2 AND rol = $3',
-                    [hash, 'admin@pesv.com', 'admin']
-                );
-            }
+            await client.query(
+                'UPDATE usuarios SET password = $1 WHERE email = $2',
+                [hashAdmin, 'admin@pesv.com']
+            );
             return;
         }
 
@@ -329,17 +335,22 @@ async function seedData() {
         );
         const empresaId = empResult.rows[0].id;
 
-        // Usuarios demo
-        const hash = bcrypt.hashSync('Castro161219@', 10);
+        // Super admin real
         await client.query(
             'INSERT INTO usuarios (empresa_id, nombre, email, password, rol) VALUES ($1, $2, $3, $4, $5)',
-            [empresaId, 'Admin PESV', 'admin@pesv.com', hash, 'admin']
+            [empresaId, 'Admin PESV', 'jesuscastrosg@gmail.com', hashAdmin, 'admin']
         );
 
-        const hash2 = bcrypt.hashSync('coord123', 10);
+        // Admin demo (visible en la página de login)
         await client.query(
             'INSERT INTO usuarios (empresa_id, nombre, email, password, rol) VALUES ($1, $2, $3, $4, $5)',
-            [empresaId, 'Coordinador Demo', 'coordinador@pesv.com', hash2, 'coordinador']
+            [empresaId, 'Admin Demo', 'admin@pesv.com', hashAdmin, 'admin']
+        );
+
+        // Coordinador demo
+        await client.query(
+            'INSERT INTO usuarios (empresa_id, nombre, email, password, rol) VALUES ($1, $2, $3, $4, $5)',
+            [empresaId, 'Coordinador Demo', 'coordinador@pesv.com', hashCoord, 'coordinador']
         );
 
         // Fases y pasos
